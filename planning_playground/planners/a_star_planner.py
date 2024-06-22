@@ -3,6 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import heapq
 
 # todo create viz for testing path planning
     # todo create a function that takes a map and a path and displays the path on the map
@@ -21,7 +22,7 @@ class Node:
         self.parent = parent
         self.cost = 0
         self.heuristic = 0
-        
+        children = []
         self.cost_equation = cost_equation
         self.heuristic_equation = heuristic_equation
 
@@ -77,6 +78,12 @@ def calculate_cost(a, b):
         cost += 1
     return cost # todo - create a better cost function that takes into account the motion model and the cost of moving from one state to another
 
+class PathPlanningResult:
+    def __init__(self, path, timing_data, expantions):
+        self.path = path
+        self.timing_data = {"total": 0, "expanding": 0, "calc_cost": 0, "calc_heuristic": 0, "collision_check": 0, "checking_closed": 0, "sorting": 0, "setup": 0, "path_creation": 0, "getting_neighbors": 0, "node_creation": 0}
+        self.expended_nodes = []
+
 def calculate_heuristic(a, b):
     return np.linalg.norm(np.array((a[0], a[1])) - np.array((b[0], b[1]))) 
 
@@ -88,83 +95,99 @@ class AStarPlanner:
     # this assumes that the robot is the size of a grid cell
     # and that the robot can move in any direction - holonomic
     # todo - add the robot size as a parameter
-    def plan(self, start_state, goal_state):
+
+    #Make the state space in the full map size and have the helpers that interact with the map convert the state space to the grid space
+
+    def plan(self, start_state, goal_state, benchmark=False):
+        result = PathPlanningResult([], {}, {})
         # get the current time
         start_time = time.time()
         # get the start and goal nodes
-        print("start state", start_state)
-        print("goal state", goal_state)
         # create the open and closed lists
         open_list = []
         closed_dict = {}
         goal = Node(self.motion_model, goal_state, calculate_cost, calculate_heuristic, None)
         start = Node(self.motion_model, start_state, calculate_cost, calculate_heuristic, None)
-        print("start state", start.get_state())
-        print("goal state", goal.get_state())
         start.calculate_cost()
         start.calculate_heuristic(goal)
-        print("start cost", start.get_cost())
-        print("start heuristic", start.get_heuristic())
 
         # add the start node to the open list
         closed_dict[start.state] = start
-        print(closed_dict)
+        # print(closed_dict)
         neighbors = start.get_neighbor_states()
         for neighbor in neighbors:
             open_list.append(Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, start))
-        print(open_list)
-
+        # print(open_list)
+        end_setup_time = time.time()
+        result.timing_data["setup"] = end_setup_time - start_time
         # while the open list is not empty
+        open_set = set([open_node.state for open_node in open_list])
+        heapq.heapify(open_list)
         while len(open_list) > 0:
             # get the current node
-            open_list.sort()
-
-            current_node = open_list[0]
+            start_expanding = time.time()
+            current_node = heapq.heappop(open_list)
+            closed_dict[current_node.get_state()] = current_node
             # get the node with the lowest cost
-
+            # print("current node", current_node.get_state())
             # remove the current node from the open list
-            open_list.pop(0)
+            try:
+                open_set.remove(current_node.get_state())
+            except:
+                print("node not in open:", current_node.get_state())
             # print("-" * 20)
             # print("expanding node", current_node.get_state())
             # print("current cost", current_node.get_cost())
             # print("current heuristic", current_node.get_heuristic())
             # print("current total cost", current_node.get_total_cost()) 
-            neighbors = current_node.get_neighbor_states()
-            for neighbor in neighbors:
-                new_node = Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, current_node)
-                new_node.calculate_cost()
+            start_getting_neighbors = time.time()
+            neighbors = self.get_neighboring_nodes(current_node, goal, result.timing_data)
+            result.timing_data["getting_neighbors"] += time.time() - start_getting_neighbors
 
-                new_node.calculate_heuristic(goal)
-                # if the neighbor is not in the open list
-                if neighbor not in [open_node.state for open_node in open_list]:
-                    if neighbor[0] < 0 or neighbor[1] < 0 or neighbor[0] >= self.map.grid_size or neighbor[1] >= self.map.grid_size:
-                        # print("neighbor is out of bounds", neighbor)
-                        continue
-                    # print(self.map.get_map_collision_value(neighbor))
-                    if self.map.get_map_collision_value(neighbor) !=  255: # this is a hold in for checking the value of the map at a specific point
-                        continue
-                else:
+            for neighbor in neighbors:
+                
+                start_collision_check = time.time()
+                if neighbor.get_state() in open_set:
+                    # print("neighbor is out of bounds", neighbor)
+                    end_collision_check = time.time()
+                    result.timing_data["collision_check"] += end_collision_check - start_collision_check
                     continue
 
-
+                if self.motion_model.collision_check(neighbor.get_state(), result.timing_data):
+                    continue
+                # print("state is not in collision!")
+                # print("neighbor", neighbor.get_state())
+                # this should be a function in the motion model that takes in the map and the state of the robot, and the timeing data
+                start_checking_closed = time.time()
                 # if the neighbor is in the closed list
                 # we should check the cost of the neighbor vs the one in the closed list
                 # if the cost of the neighbor is lower than the one in the closed list
                 # we should remove the one in the closed list and add the neighbor to the open list
-                if neighbor in closed_dict:
-                    closed_node = closed_dict[neighbor]
-                    if new_node.get_cost() < closed_node.get_cost():
-                        closed_dict.pop(neighbor)
-                        open_list.append(new_node)
+                if neighbor.state in closed_dict:
+                    closed_node = closed_dict[neighbor.state]
+                    if neighbor.get_total_cost() < closed_node.get_total_cost() and closed_node != start:
+                        # print("removing node from closed list", closed_node.get_state())
+                        closed_dict.pop(neighbor.state)
+                        heapq.heappush(open_list, neighbor)
+                        open_set.add(neighbor.state)
                 else: 
-                    open_list.append(new_node)
-
+                    # print("adding neighbor to open list", neighbor.get_state())
+                    heapq.heappush(open_list, neighbor)
+                    open_set.add(neighbor.state)
+                end_checking_closed = time.time()
+                result.timing_data["checking_closed"] += end_checking_closed - start_checking_closed
                            # add the current node to the closed list
+            print("adding to the closed dict", current_node.get_state())
             closed_dict[current_node.get_state()] = current_node
+            # print("closed dict: ", closed_dict)
             # print("current heuristics", current_node.get_heuristic())
-
+            end_expanding = time.time()
+            result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
+            print("current node", current_node.get_state())
+            print("goal", goal.get_state())
             if current_node == goal:
+                start_path = time.time()
                 path = []
                 print("goal found")
                 current = current_node
@@ -177,6 +200,22 @@ class AStarPlanner:
                 print("path", path)
                 path.reverse()
                 end_time = time.time()
-                return path, end_time - start_time
+                result.timing_data["path_creation"] = end_time - start_path
+                result.timing_data["total"] = end_time - start_time
+                result.path = path
+                result.expended_nodes = closed_dict.keys()
+                return result
 
-        return None
+        return result
+    
+    def get_neighboring_nodes(self, node, goal, timing_data):
+        start_time = time.time()
+        neighbors = node.get_neighbor_states()
+        neighbor_nodes = []
+        for neighbor in neighbors:
+            new_node = Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, node)
+            new_node.cost = self.motion_model.calc_cost(node.parent.get_state(), new_node.get_state(), timing_data)
+            new_node.heuristic = self.motion_model.calc_heurisitc(new_node.get_state(), goal.get_state(), timing_data)
+            neighbor_nodes.append(new_node)
+        timing_data["getting_neighbors"] += time.time() - start_time
+        return neighbor_nodes

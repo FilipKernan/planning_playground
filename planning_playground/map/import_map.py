@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 class Map2d:
-
+    # This only supports square maps for now
     def __init__(self, image_path, grid_size=10):
         self.hulls = None
         self.map_dimentions = None
@@ -37,7 +37,7 @@ class Map2d:
     #get the contours of the map as a set of convex polygons
     def get_map_convex_obstacles(self):
         # Load the image using OpenCV
-        print("getting map convex obstacles")        
+        # print("getting map convex obstacles")        
         # Check if the image was loaded successfully
         # Convert the image to grayscale
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
@@ -74,20 +74,20 @@ class Map2d:
 
         # Check if the image was loaded successfully
         # Convert the image to grayscale
-        print("creating map graph")
+        ##  print("creating map graph")
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Apply a threshold to the image
-        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
-        print("thresh", thresh)
+        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY_INV)
+        # print("thresh", thresh)
         cv2.imshow("thresh", thresh)
 
         # Find contours in the image
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        kernel = np.ones((10, 10), np.uint8) 
-        dialated = cv2.erode(thresh, kernel, iterations=2)
+        kernel = np.ones((10, 10), np.uint8) # this should be a parameter
+        dialated = cv2.dilate(thresh, kernel, iterations=2)
         cv2.imshow("dialated", dialated)
-
+        self.collision_map = dialated
         # Resize input to "pixelated" size
         pixilized = cv2.resize(dialated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR)
         self.pixilized = pixilized
@@ -102,22 +102,33 @@ class Map2d:
                 nodes[i, j] = (pixilized[i, j], (i * self.grid_size, j * self.grid_size))
 
     #get the value of the map a a specific point
-    def get_map_value(self, point):
+    def get_map_collision_value(self, point):
         # Load the image using OpenCV
 
         # Check if the image was loaded successfully
         # Get the value of the map at a specific point
-        value = self.image[point[0], point[1]]
+        value = self.collision_map[point[1], point[0]]
         return value
 
     # get the balue of the map at a specific point with the grid
-    def get_map_collision_value(self, point ):
+    def get_map_discretized_collision_value(self, point ):
         # Load the image using OpenCV
 
         # Check if the image was loaded successfully
         # Get the value of the map at a specific point with the grid
         value = self.pixilized[ point[1], point[0]]
+        # print("value", value)
         return value
+    
+    def get_map_point_in_collision(self, point, descritized_map = True):
+        if descritized_map:
+            print("checking point:", point)
+            point = (point[0] // (self.map_dimentions[0] // self.grid_size), point[1] // (self.map_dimentions[1] // self.grid_size))
+            print("checking against disc:", point)
+            return self.get_map_discretized_collision_value(point) != 0
+        else:
+            # convert the point to the discritized map
+            return self.get_map_collision_value(point) != 0
 
     def get_node(self, point):
         # Load the image using OpenCV

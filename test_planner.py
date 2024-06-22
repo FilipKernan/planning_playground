@@ -14,12 +14,19 @@ if __name__ == '__main__':
     print("created map")
     # todo: make a ui for chousing the start and goal
     start = (0, 0, 0)
-    goal = (95, 95, 0)
-    motion_model = holonomic_model.HolonomicModel([1, 1], 1)
+    goal = (500, 500, 0)
+    motion_model = holonomic_model.HolonomicModel([1, 1], 1, map)
+    result = a_star_planner.PathPlanningResult([], {}, {})
     a_star = a_star_planner.AStarPlanner(map, motion_model)
-    path, delta_time = a_star.plan(start, goal)
-    print(path)
+    result = a_star.plan(start, goal)
+    print(result.path)
+    path = result.path
+    delta_time = result.timing_data
+    expanded = result.expended_nodes
     viz = viz.VizPlan(map, path, motion_model, start, goal)
-    # viz.plot_map()
+    viz.plot_map()
     viz.plot_path()
     print("delta time", delta_time)
+    sum_val = sum(value for key, value in delta_time.items() if key != "total" and key != "expanding")
+    print(sum_val)
+    # print("expanded", expanded)
