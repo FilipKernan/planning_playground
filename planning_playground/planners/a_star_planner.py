@@ -89,13 +89,14 @@ class AStarPlanner:
     # and that the robot can move in any direction - holonomic
     # todo - add the robot size as a parameter
     def plan(self, start_state, goal_state):
-        start_time = time.time() 
+        # get the current time
+        start_time = time.time()
         # get the start and goal nodes
         print("start state", start_state)
         print("goal state", goal_state)
         # create the open and closed lists
         open_list = []
-        closed_list = []
+        closed_dict = {}
         goal = Node(self.motion_model, goal_state, calculate_cost, calculate_heuristic, None)
         start = Node(self.motion_model, start_state, calculate_cost, calculate_heuristic, None)
         print("start state", start.get_state())
@@ -106,8 +107,8 @@ class AStarPlanner:
         print("start heuristic", start.get_heuristic())
 
         # add the start node to the open list
-        closed_list.append(start)
-        print(closed_list)
+        closed_dict[start.state] = start
+        print(closed_dict)
         neighbors = start.get_neighbor_states()
         for neighbor in neighbors:
             open_list.append(Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, start))
@@ -130,27 +131,37 @@ class AStarPlanner:
             # print("current total cost", current_node.get_total_cost()) 
             neighbors = current_node.get_neighbor_states()
             for neighbor in neighbors:
-                # if the neighbor is in the closed list
-                # we should check the cost of the neighbor vs the one in the closed list
-                # if the cost of the neighbor is lower than the one in the closed list
-                # we should remove the one in the closed list and add the neighbor to the open list
-                if neighbor in [closed_node.state for closed_node in closed_list]:
-                    continue
+                new_node = Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, current_node)
+                new_node.calculate_cost()
 
+                new_node.calculate_heuristic(goal)
                 # if the neighbor is not in the open list
                 if neighbor not in [open_node.state for open_node in open_list]:
                     if neighbor[0] < 0 or neighbor[1] < 0 or neighbor[0] >= self.map.grid_size or neighbor[1] >= self.map.grid_size:
                         # print("neighbor is out of bounds", neighbor)
                         continue
                     # print(self.map.get_map_collision_value(neighbor))
-                    if self.map.get_map_collision_value(neighbor) == 255: # this is a hold in for checking the value of the map at a specific point
-                        new_node = Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, current_node)
-                        new_node.calculate_cost()
-                        new_node.calculate_heuristic(goal)
-                        open_list.append(new_node)
+                    if self.map.get_map_collision_value(neighbor) !=  255: # this is a hold in for checking the value of the map at a specific point
+                        continue
+                else:
+                    continue
 
-            # add the current node to the closed list
-            closed_list.append(current_node)
+
+                # if the neighbor is in the closed list
+                # we should check the cost of the neighbor vs the one in the closed list
+                # if the cost of the neighbor is lower than the one in the closed list
+                # we should remove the one in the closed list and add the neighbor to the open list
+                if neighbor in closed_dict:
+                    closed_node = closed_dict[neighbor]
+                    if new_node.get_cost() < closed_node.get_cost():
+                        closed_dict.pop(neighbor)
+                        open_list.append(new_node)
+                else: 
+                    open_list.append(new_node)
+
+                           # add the current node to the closed list
+            closed_dict[current_node.get_state()] = current_node
+            # print("current heuristics", current_node.get_heuristic())
 
             # if the current node is the goal node
             if current_node == goal:
@@ -165,6 +176,7 @@ class AStarPlanner:
                     current = current.parent
                 print("path", path)
                 path.reverse()
-                return path, time.time() - start_time
+                end_time = time.time()
+                return path, end_time - start_time
 
         return None
