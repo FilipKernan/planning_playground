@@ -1,0 +1,79 @@
+1. Create a map representation
+    - high def version - for sampling representation check
+    - low def version - for graph search representation check
+2. Create a graph representation 
+3. Create a start and goal representation
+4. Implement motion model
+    - Dubins car
+    - Reeds-Shepp car
+    - holonomic robot - 1
+    - Bicycle model - 1
+    - Unicycle model - 1
+    - Differential Drive
+    - Ackermann Drive
+    - Car with trailer
+    - Quadrotor
+    - Hexacopter
+    - Octocopter 
+    - bb-8
+        - this is just a holonomic robot with extra constraints
+    - custom model
+5. Implement a search function
+    - A* - 1
+        - takes in a heuristic and a cost function
+    - A* with path optimization
+    - Hybrid A*
+    - Bi-directional A* - 2
+    - Bi-directional A* with path optimization
+    - Bi-directional Hybrid A*
+    - RRT - 1
+    - RRT* - 1
+    - RRT* with path optimization
+    - Bi-directional RRT - 2
+    - Bi-directional RRT* - 2
+    - Bi-directional RRT* with path optimization
+    - D* Lite
+    - D* Lite with path optimization
+    - Bi-directional D* Lite
+    - Informed RRT*
+    - Informed RRT* with path optimization
+    - Bi-directional Informed RRT*
+    - Bi-directional Informed RRT* with path optimization
+    - BIT*
+    - BIT* with path optimization
+    - RABBIT*
+    - Nural Network based search - this might be A* based with a neural network heuristic or a neural network based search in some other way
+        - could also be RRT* based with a neural network sampling
+        - Monte Carlo Tree Search?
+    * should take in a start, goal, graph, motion model, and a map
+    * should return a path
+6. Implement visualization
+    - each node should be 1 second apart
+    - should show the path
+    - interpolation between nodes
+    - show viz of the motion model
+    - show expansion of the graph in real time and in slowed down time
+7. Implement path smoothing 
+    - simple spline
+    - bezier curve
+    - optimization based - use drake for optimization? Or maybe just scipy?
+8. Implement velocty planning
+    - use same algorithms but with different primatives
+9. Implement path following
+    - PID
+    - Stanley
+    - Pure Pursuit
+    - LQR
+    - MPC
+10. Integrate into ros
+    - use gazebo for simulation
+    - use rviz for visualization
+    - use ros for communication
+    - simulate noise
+
+
+
+
+Start with a simple holonomic robot and A* search
+Also start in python and then move to C++ as things get more complicated so that you know how to do it in c++
+    It is just faster to prototype in python
