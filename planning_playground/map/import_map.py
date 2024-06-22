@@ -1,32 +1,29 @@
+from calendar import c
 import cv2
+import numpy as np
 
 class Map2d:
 
     def __init__(self, image_path, grid_size=10):
+        self.hulls = None
+        self.map_dimentions = None
+        self.image = None
         self.image_path = image_path
-        self.image = cv2.imread(image_path)
-        self.height, self.width = self.get_map_dimentions(self.image)
-        self.hulls = self.get_map_convex_obstacles(self.image)
-        self.map_dimentions, self.hulls = self.get_map_dimentions_and_obstacles(self.image)
+        self.image = self.import_map(image_path)
+        self.map_dimentions, self.hulls = self.get_map_dimentions_and_obstacles()
         self.grid_size = grid_size
-        self.graph = self.create_map_graph(self.image, self.grid_size)
+        self.create_map_graph()
 
 
-    def import_map(image_path):
+    def import_map(self, image_path):
         # Load the image using OpenCV
         image = cv2.imread(image_path)
-
         # Check if the image was loaded successfully
         if image is not None:
-            # Perform any further processing on the image here
-            # For example, you can apply filters, resize, or perform object detection
-
-            # Display the image
-            cv2.imshow('Image', image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            print("Image loaded successfully")
         else:
             print('Failed to load the image.')
+        return image
 
 
     # get the dementions of a map
@@ -35,13 +32,12 @@ class Map2d:
 
         # Check if the image was loaded successfully
             # Get the dimensions of the image
-        height, width, channels = self.image.shape
-        return height, width
+        return self.map_dimentions 
 
     #get the contours of the map as a set of convex polygons
     def get_map_convex_obstacles(self):
         # Load the image using OpenCV
-
+        print("getting map convex obstacles")        
         # Check if the image was loaded successfully
         # Convert the image to grayscale
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
@@ -68,7 +64,7 @@ class Map2d:
         # Get the dimensions of the image
         height, width, channels = self.image.shape
         map_dimentions = (height, width)    
-        hulls = self.get_map_convex_obstacles(self.image)
+        hulls = self.get_map_convex_obstacles()
 
         return map_dimentions, hulls
 
@@ -78,34 +74,32 @@ class Map2d:
 
         # Check if the image was loaded successfully
         # Convert the image to grayscale
+        print("creating map graph")
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Apply a threshold to the image
-        _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+        print("thresh", thresh)
+        cv2.imshow("thresh", thresh)
 
         # Find contours in the image
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        kernel = np.ones((10, 10), np.uint8) 
+        dialated = cv2.erode(thresh, kernel, iterations=2)
+        cv2.imshow("dialated", dialated)
 
         # Resize input to "pixelated" size
-        pixilized = cv2.resize(input, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR)
-
+        pixilized = cv2.resize(dialated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR)
+        self.pixilized = pixilized
+        cv2.imshow("pixilized", pixilized)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        print("creating nodes " + str(self.grid_size**2))
         # Create a grid of nodes
         nodes = {}
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 nodes[i, j] = (pixilized[i, j], (i * self.grid_size, j * self.grid_size))
-
-        # Create a graph from the grid of nodes
-        graph = {}
-        for node in nodes:
-            graph[node] = []
-            for neighbor in nodes:
-                if neighbor != node:
-                    if abs(neighbor[0] - node[0]) <= self.grid_size and abs(neighbor[1] - node[1]) <= self.grid_size:
-                        graph[node].append(neighbor)
-        self.nodes = nodes
-        self.graph = graph
-        return graph
 
     #get the value of the map a a specific point
     def get_map_value(self, point):
@@ -117,22 +111,14 @@ class Map2d:
         return value
 
     # get the balue of the map at a specific point with the grid
-    def get_map_value(self, point ):
+    def get_map_collision_value(self, point ):
         # Load the image using OpenCV
 
         # Check if the image was loaded successfully
         # Get the value of the map at a specific point with the grid
-        value = self.image[point[0], point[1]]
+        value = self.pixilized[ point[1], point[0]]
         return value
 
-    def get_neighbors(self, node):
-        # Load the image using OpenCV
-
-        # Check if the image was loaded successfully
-        # Get the neighbors of a point
-        
-        return self.graph[node] 
-    
     def get_node(self, point):
         # Load the image using OpenCV
 

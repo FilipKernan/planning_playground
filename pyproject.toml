@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "planning-playground"
+version = "0.1.0"
+description = "This is a planning playground for learning motion and task planning"
+authors = ["Filip Kernan <filip.kernan@gmail.com>"]
+readme = "README.md"
+packages = [{include = "planning_playground"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+opencv-python = "^4.10"
+numpy = "^2.0.0"
+matplotlib = "^3.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
