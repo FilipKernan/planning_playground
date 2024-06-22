@@ -2,6 +2,7 @@ import planning_playground.map.import_map as import_map
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 # todo create viz for testing path planning
     # todo create a function that takes a map and a path and displays the path on the map
@@ -88,7 +89,7 @@ class AStarPlanner:
     # and that the robot can move in any direction - holonomic
     # todo - add the robot size as a parameter
     def plan(self, start_state, goal_state):
-        
+        start_time = time.time() 
         # get the start and goal nodes
         print("start state", start_state)
         print("goal state", goal_state)
@@ -164,6 +165,6 @@ class AStarPlanner:
                     current = current.parent
                 print("path", path)
                 path.reverse()
-                return path
+                return path, time.time() - start_time
 
         return None
