@@ -22,7 +22,6 @@ class Node:
         self.parent = parent
         self.cost = 0
         self.heuristic = 0
-        children = []
         self.cost_equation = cost_equation
         self.heuristic_equation = heuristic_equation
 
@@ -82,7 +81,7 @@ class PathPlanningResult:
     def __init__(self, path, timing_data, expantions):
         self.path = path
         self.timing_data = {"total": 0, "expanding": 0, "calc_cost": 0, "calc_heuristic": 0, "collision_check": 0, "checking_closed": 0, "sorting": 0, "setup": 0, "path_creation": 0, "getting_neighbors": 0, "node_creation": 0}
-        self.expended_nodes = []
+        self.expended_nodes = {}
 
 def calculate_heuristic(a, b):
     return np.linalg.norm(np.array((a[0], a[1])) - np.array((b[0], b[1]))) 
@@ -148,7 +147,6 @@ class AStarPlanner:
                 
                 start_collision_check = time.time()
                 if neighbor.get_state() in open_set:
-                    # print("neighbor is out of bounds", neighbor)
                     end_collision_check = time.time()
                     result.timing_data["collision_check"] += end_collision_check - start_collision_check
                     continue
@@ -171,21 +169,20 @@ class AStarPlanner:
                         heapq.heappush(open_list, neighbor)
                         open_set.add(neighbor.state)
                 else: 
-                    # print("adding neighbor to open list", neighbor.get_state())
                     heapq.heappush(open_list, neighbor)
                     open_set.add(neighbor.state)
                 end_checking_closed = time.time()
                 result.timing_data["checking_closed"] += end_checking_closed - start_checking_closed
                            # add the current node to the closed list
-            print("adding to the closed dict", current_node.get_state())
+            # print("adding to the closed dict", current_node.get_state())
             closed_dict[current_node.get_state()] = current_node
             # print("closed dict: ", closed_dict)
             # print("current heuristics", current_node.get_heuristic())
             end_expanding = time.time()
             result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
-            print("current node", current_node.get_state())
-            print("goal", goal.get_state())
+            # print("current node", current_node.get_state())
+            # print("goal", goal.get_state())
             if current_node == goal:
                 start_path = time.time()
                 path = []
@@ -203,7 +200,7 @@ class AStarPlanner:
                 result.timing_data["path_creation"] = end_time - start_path
                 result.timing_data["total"] = end_time - start_time
                 result.path = path
-                result.expended_nodes = closed_dict.keys()
+                result.expended_nodes = closed_dict
                 return result
 
         return result
@@ -214,8 +211,8 @@ class AStarPlanner:
         neighbor_nodes = []
         for neighbor in neighbors:
             new_node = Node(self.motion_model, neighbor, calculate_cost, calculate_heuristic, node)
-            new_node.cost = self.motion_model.calc_cost(node.parent.get_state(), new_node.get_state(), timing_data)
-            new_node.heuristic = self.motion_model.calc_heurisitc(new_node.get_state(), goal.get_state(), timing_data)
+            new_node.cost = node.get_cost() + self.motion_model.calc_cost(node.get_state(), new_node.get_state(), node.parent.get_state(), timing_data)
+            new_node.heuristic = self.motion_model.calc_heurisitc(node.get_state(), new_node.get_state(), goal.get_state(), timing_data)
             neighbor_nodes.append(new_node)
         timing_data["getting_neighbors"] += time.time() - start_time
         return neighbor_nodes

@@ -122,9 +122,9 @@ class Map2d:
     
     def get_map_point_in_collision(self, point, descritized_map = True):
         if descritized_map:
-            print("checking point:", point)
+            # print("checking point:", point)
             point = (point[0] // (self.map_dimentions[0] // self.grid_size), point[1] // (self.map_dimentions[1] // self.grid_size))
-            print("checking against disc:", point)
+            # print("checking against disc:", point)
             return self.get_map_discretized_collision_value(point) != 0
         else:
             # convert the point to the discritized map

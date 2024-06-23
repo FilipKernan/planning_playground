@@ -8,7 +8,7 @@ packages = [{include = "planning_playground"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pyqt5-qt5 = "==5.15.2" 
+pyqt6 = "^6.7.0"
 opencv-python = "^4.10"
 numpy = "^2.0.0"
 matplotlib = "^3.9.0"
