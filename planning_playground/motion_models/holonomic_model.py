@@ -1,5 +1,7 @@
 import time
 import numpy as np
+from shapely.geometry import Polygon, LineString, Point
+import cv2
 
 
 
@@ -33,7 +35,7 @@ class HolonomicModel:
     def get_footprint(self, state):
         return [(state[0], state[1])]
     
-    def calc_cost(self, current_state, next_state, prev_state, timing_data):
+    def calc_cost(self, current_state, next_state, timing_data):
         start_cost = time.time()
         cost = 0
         if self.is_discrete:
@@ -56,7 +58,7 @@ class HolonomicModel:
             timing_data["calc_cost"] += time.time() - start_cost
         return cost
     
-    def calc_heurisitc(self, last_state, current_state, goal, timing_data):
+    def calc_heurisitc(self,  current_state, goal, timing_data):
         start_heuristic = time.time()
         # get the angle between last and currnet and the goal
         # last_vector = np.array((last_state[0], last_state[1])) - np.array((current_state[0], current_state[1]))
@@ -69,6 +71,36 @@ class HolonomicModel:
         h += abs(angle / 180) * 2.0
         timing_data["calc_heuristic"] += time.time() - start_heuristic
         return h
+    
+    def get_random_state_within_map(self, timing_data):
+        start_time = time.time()
+        new_state = None
+        while new_state is None:
+            new_state = (np.random.randint(0, self.map.map_dimentions[0]), np.random.randint(0, self.map.map_dimentions[1]), np.random.randint(0, 360))
+            if self.collision_check(new_state, timing_data  ):
+                new_state = None
+        timing_data["sampling"] += time.time() - start_time
+        return new_state
+    
+    def collision_check_along_line(self, start, end, timing_data):
+        # get the points between start and end
+        start_collision_check = time.time()
+        contours = self.map.hulls
+        image = self.map.image.copy()
+        for contour in contours:
+            contour = np.squeeze(contour)
+            polygon = Polygon(contour)
+            if polygon.intersects(LineString([start, end])):
+                timing_data["collision_check"] += time.time() - start_collision_check
+                # print("collision")
+                # cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
+                # cv2.line(image, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), (0, 0, 255), 3)
+                # cv2.imshow("line", image)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
+                return True
+        timing_data["collision_check"] += time.time() - start_collision_check
+        return False
     
     # returns true if there is a collision, false if there is not
     def collision_check(self, state, timing_data, descritized_map = True):
@@ -94,6 +126,8 @@ class HolonomicModel:
        # print("not in collision")
        return False
 
+    def get_distance(self, a, b):
+        return np.linalg.norm(np.array((a[0], a[1])) - np.array((b[0], b[1])))#  + abs(a[2] - b[2]) / 180.0
 
 
 def angle_between_vectors(a, b):

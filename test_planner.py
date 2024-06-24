@@ -1,29 +1,32 @@
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
-import planning_playground.planners.a_star_planner as a_star_planner
-import planning_playground.viz.viz_plan as viz
+import planning_playground.planners.rrt_planner as rrt_planner
+from planning_playground.planners.types import PathPlanningResult
+from planning_playground.planners.types import Node
+import planning_playground.viz.viz_plan as viz_plan
+import networkx as nx
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-if __name__ == '__main__':
+def main(debug=False):
     # Create a map
     print("creating map")
-    map = import_map.Map2d("planning_playground/map/map_dense750.png", 50)
+    map = import_map.Map2d("planning_playground/map/map_dense750.png", grid_size=60)
     print("created map")
     # todo: make a ui for chousing the start and goal
     start = (0, 0, 0)
-    goal = (960, 960, 0)
-    motion_model = holonomic_model.HolonomicModel([1, 1], 1, map)
-    result = a_star_planner.PathPlanningResult([], {}, {})
-    a_star = a_star_planner.AStarPlanner(map, motion_model)
+    goal = (900, 900, 0)
+    motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=False)
+    result = PathPlanningResult()
+    a_star = rrt_planner.RRTPlanner(map, motion_model)
     result = a_star.plan(start, goal)
     print(result.path)
     path = result.path
     delta_time = result.timing_data
     expanded = result.expended_nodes
-    viz = viz.VizPlan(map, path, motion_model, start, goal)
+    viz = viz_plan.VizPlan(map, path, motion_model, start, goal)
     viz.plot_map()
     viz.plot_path()
     print("delta time", delta_time)
@@ -31,7 +34,8 @@ if __name__ == '__main__':
     print("total time", delta_time["total"] )
     # print("expanded", expanded)
     print("number of nodes expanded", len(expanded))
-
+    if debug == False:
+        return
     # Extract data
     x = []
     y = []
@@ -80,3 +84,30 @@ if __name__ == '__main__':
     # Display the plots
     plt.tight_layout()
     plt.show()
+
+    # Plot the expanded.values() and connections
+    plt.figure(figsize=(10, 8))
+
+    # Plot each node
+    for node in expanded.values():
+        x, y = node.state[0], node.state[1]
+        plt.scatter(x, y, c='skyblue', s=100)  # Plot the node
+        # plt.text(x, y, f'({x}, {y})', fontsize=9, ha='right')  # Label the node
+
+    # Plot the connections
+    for node in expanded.values():
+        for child in node.children:
+            x_values = [node.state[0], child.state[0]]
+            y_values = [node.state[1], child.state[1]]
+            plt.plot(x_values, y_values, 'gray')
+
+    # Customize the plot
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Graph Visualization Based on Node Positions')
+    plt.grid(True)
+    plt.show()
+
+
+if __name__ == '__main__':
+    main()

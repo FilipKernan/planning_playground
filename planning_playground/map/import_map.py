@@ -41,19 +41,26 @@ class Map2d:
         # Check if the image was loaded successfully
         # Convert the image to grayscale
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-
+        gray = cv2.rectangle(gray, (0, 0), (gray.shape[1], gray.shape[0]), (255, 255, 255), 5)
+        cv2.imshow("gray", gray)
         # Apply a threshold to the image
-        _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
 
+        kernel = np.ones((10, 10), np.uint8) # this should be a parameter
+        dialated = cv2.dilate(thresh, kernel, iterations=2)
         # Find contours in the image
-        contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+        contours, _ = cv2.findContours(dialated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(self.image, contours, -1, (0, 255, 0), 4)
+        cv2.imshow("hello", self.image)
         # Find the convex hull object for each contour
         hull_list = []
         for i in range(len(contours)):
             hull = cv2.convexHull(contours[i])
             hull_list.append(hull)
-
+        cv2.drawContours(self.image, hull_list, -1, (0, 127, 255), 1)
+        cv2.imshow("Image", self.image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         return hull_list
 
     # write a function that gets the dimentions of the map and the set of all convex polygons
@@ -120,10 +127,16 @@ class Map2d:
         # print("value", value)
         return value
     
+    def scale(self, OldValue):
+        OldRange =  0 - self.map_dimentions[0]
+        NewRange = 0 - self.grid_size 
+        NewValue = (((OldValue - 0) * NewRange) / OldRange) + 0 
+        return NewValue
+    
     def get_map_point_in_collision(self, point, descritized_map = True):
         if descritized_map:
             # print("checking point:", point)
-            point = (point[0] // (self.map_dimentions[0] // self.grid_size), point[1] // (self.map_dimentions[1] // self.grid_size))
+            point = (int(self.scale(point[0])), int(self.scale(point[1])))
             # print("checking against disc:", point)
             return self.get_map_discretized_collision_value(point) != 0
         else:
