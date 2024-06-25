@@ -14,7 +14,6 @@ class HolonomicModel:
 
     
     def get_points(self, state):
-        # print("state to point", state[0], state[1])
         return state[0], state[1]
     
     def get_neighbor_states(self, state):
@@ -28,7 +27,6 @@ class HolonomicModel:
                             continue
                         angle = (state[2] + z) % 360
                         neighbors.append((state[0] + x, state[1] + y, angle))
-            # print("neighbors", neighbors) 
 
         return neighbors
     
@@ -40,31 +38,21 @@ class HolonomicModel:
         cost = 0
         if self.is_discrete:
             is_angle_diff = abs(current_state[2] - next_state[2]) > 0
-            # if np.linalg.norm(np.array((a[0], a[1])) - np.array((b[0], b[1])) > 1):
-                # cost += 12
-            # else:
-                # cost += 10
+
             if is_angle_diff:
                 cost += 0.1
-            #angle_diff_rad, angle_diff_deg = angle_between_vectors(last_vector, next_vector)
+            
             dist = np.linalg.norm(np.array((current_state[0], current_state[1])) - np.array((next_state[0], next_state[1])))
             if dist > self.position_discretization:
                 cost += 1.5 * dist
             else:
                 cost += dist
             
-            # cost += abs(angle_diff_rad)
-            # cost *= 2.0
             timing_data["calc_cost"] += time.time() - start_cost
         return cost
     
     def calc_heurisitc(self,  current_state, goal, timing_data):
         start_heuristic = time.time()
-        # get the angle between last and currnet and the goal
-        # last_vector = np.array((last_state[0], last_state[1])) - np.array((current_state[0], current_state[1]))
-        # next_vector = np.array((current_state[0], current_state[1])) - np.array((goal[0], goal[1]))
-        # angle_diff_rad, angle_diff_deg = angle_between_vectors(last_vector, next_vector)
-        # scale = 1.0 + np.sin(angle_diff_rad)
         h = np.linalg.norm(np.array((current_state[0], current_state[1])) - np.array((goal[0], goal[1])))
         angle = current_state[2] - goal[2]
         angle = (angle + 180) % 360 - 180
@@ -86,18 +74,11 @@ class HolonomicModel:
         # get the points between start and end
         start_collision_check = time.time()
         contours = self.map.hulls
-        image = self.map.image.copy()
         for contour in contours:
             contour = np.squeeze(contour)
             polygon = Polygon(contour)
             if polygon.intersects(LineString([start, end])):
                 timing_data["collision_check"] += time.time() - start_collision_check
-                # print("collision")
-                # cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
-                # cv2.line(image, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), (0, 0, 255), 3)
-                # cv2.imshow("line", image)
-                # cv2.waitKey(0)
-                # cv2.destroyAllWindows()
                 return True
         timing_data["collision_check"] += time.time() - start_collision_check
         return False
@@ -107,10 +88,8 @@ class HolonomicModel:
        start_collision_check = time.time()
        height, width = self.map.map_dimentions
        if state[0] < 0 or state[1] < 0 or state[0] >= width or state[1] >= height:
-         # print(self.map.get_map_collision_value(neighbor))
            end_collision_check = time.time()
            timing_data["collision_check"] += end_collision_check - start_collision_check
-           # print("out of bounds")
            return True
  
        for point in self.get_footprint(state):

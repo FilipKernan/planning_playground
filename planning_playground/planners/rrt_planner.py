@@ -29,17 +29,16 @@ class RRTPlanner:
             start_expanding = time.time()
             # create a sampler class base class that has a get_random_state method
             random_state = self.motion_model.get_random_state_within_map(result.timing_data)
-            # print("random state", random_state)
             rand_node = Node(self.motion_model, random_state)
             nearest_node = self.get_nearest_node(rand_node, result.timing_data)
             if nearest_node is None:
                 result.timing_data["expanding"] += time.time() - start_expanding
                 continue
-            # print("nearest node", nearest_node.get_state())
             rand_node.parent = nearest_node
             rand_node.cost = rand_node.get_cost()
             nearest_node.children.append(rand_node)
             self.nodes[rand_node.get_state()] = rand_node
+            
             if self.motion_model.get_distance(rand_node.get_state(), self.goal_node.get_state()) < self.goal_threshold and \
                 False == self.motion_model.collision_check_along_line(rand_node.get_state(), self.goal_node.get_state(), result.timing_data):
                 
@@ -47,23 +46,15 @@ class RRTPlanner:
                 print("new goal threshold", self.goal_threshold)
                 self.goal_node.parent = rand_node
                 print("goal state parent", self.goal_node.parent.get_state())
+
             result.timing_data["expanding"] += time.time() - start_expanding
             sample_count += 1
+
             if sample_count % 100 == 0:
                 print("sample count", sample_count)
-        path = []
-        current_node = self.goal_node
-        count = 0
-        while current_node is not None and count < 1000:
-            path.append(current_node.get_state())
-            current_node = current_node.parent
-            if current_node is not None and current_node.state == self.start_node.state:
-                path.append(current_node.state)
-                break
-            count += 1
-        path.reverse()
+
+        result.path = self.get_path(self.goal_node)
         result.timing_data["total"] = time.time() - start_time
-        result.path = path
         result.expended_nodes = self.nodes
         result.total_cost = self.goal_node.get_cost()
         return result
@@ -86,3 +77,21 @@ class RRTPlanner:
             nearest_node = None
         timing_data["getting_neighbors"] = time.time() - start_time
         return nearest_node
+
+
+    def get_path(self, node):
+        path = []
+        current_node = node
+        count = 0
+
+        while current_node is not None and count < 1000:
+            path.append(current_node.get_state())
+            current_node = current_node.parent
+
+            if current_node is not None and current_node.state == self.start_node.state:
+                path.append(current_node.state)
+                break
+            count += 1
+        
+        path.reverse()
+        return path

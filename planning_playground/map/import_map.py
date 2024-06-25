@@ -1,4 +1,4 @@
-from calendar import c
+import triangle
 import cv2
 import numpy as np
 
@@ -52,11 +52,28 @@ class Map2d:
         contours, _ = cv2.findContours(dialated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.drawContours(self.image, contours, -1, (0, 255, 0), 4)
         cv2.imshow("hello", self.image)
-        # Find the convex hull object for each contour
+
         hull_list = []
-        for i in range(len(contours)):
-            hull = cv2.convexHull(contours[i])
-            hull_list.append(hull)
+        for contour in contours:
+            # Convert the contour to a format suitable for the triangle library
+            contour_points = contour.squeeze().tolist()
+            segments = [[i, (i + 1) % len(contour_points)] for i in range(len(contour_points))]
+
+            # Create the input dictionary for the triangle library
+            contour_dict = {
+                'vertices': contour_points,
+                'segments': segments
+            }
+
+            # Triangulate the contour using the triangle library
+            t = triangle.triangulate(contour_dict, 'pq0')
+
+            # Reconstruct the convex polygons from the triangulation
+            for triangle_indices in t['triangles']:
+                pts = [t['vertices'][i] for i in triangle_indices]
+                hull_list.append(np.array(pts, dtype=np.int32))
+
+
         cv2.drawContours(self.image, hull_list, -1, (0, 127, 255), 1)
         cv2.imshow("Image", self.image)
         cv2.waitKey(0)

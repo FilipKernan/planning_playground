@@ -13,16 +13,10 @@ class VizPlan:
         self.goal = goal
 
     def plot_map(self):
-        image_copy = self.map.image
+        image_copy = self.map.image.copy()
         # make the image copy 3 channels
-        start = self.start[0], self.start[1]
-        goal = self.goal[0], self.goal[1]
-        image_copy = cv2.circle(image_copy, start, 5, (0, 255, 0), -1)
-        image_copy = cv2.circle(image_copy, goal, 5, (255, 0, 0), -1)
         # resize the image
-        cv2.imshow("map", image_copy)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        plt.imshow(image_copy)
 
     def linear_interpolate(self, point: float, old_range: tuple[float], new_range: tuple[float]):
         old_min, old_max = old_range
@@ -32,7 +26,7 @@ class VizPlan:
         return int(new_value)
 
     def plot_path(self): 
-        image_copy = self.map.image
+        image_copy = self.map.image.copy()
         # make the image copy 3 channels
         old_range = (0, self.map.grid_size)
         new_range = (0, self.map.image.shape[0])
@@ -43,6 +37,101 @@ class VizPlan:
  
         image_copy = cv2.circle(image_copy, self.motion_model.get_points(self.start), 5, (0, 255, 0), -1)
         image_copy = cv2.circle(image_copy, self.motion_model.get_points(self.goal), 5, (255, 0, 0), -1)
-        cv2.imshow("path", image_copy)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        plt.imshow(image_copy)
+        plt.title("Path")
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.show()
+
+    def get_plotted_map(self):
+        image_copy = self.map.image.copy()
+        plt.figure(figsize=(10, 8))
+        start = self.start[0], self.start[1]
+        goal = self.goal[0], self.goal[1]
+        image_copy = cv2.circle(image_copy, start, 5, (0, 255, 0), -1)
+        image_copy = cv2.circle(image_copy, goal, 5, (255, 0, 0), -1)
+        plt.imshow(image_copy, cmap='gray')
+        plt.title('Map Visualization')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.grid(True)
+    
+    def plot_map(self):
+        # Plot the map
+        self.get_plotted_map()
+        plt.show()
+    
+    def plot_cost_and_heuristic(self, expanded):
+        
+        # Extract data
+        x = []
+        y = []
+        costs = []
+        heuristics = []
+        total_costs = []
+
+        for (x_coord, y_coord, _), node in expanded.items():
+            x.append(x_coord)
+            y.append(y_coord)
+            costs.append(node.get_cost())
+            heuristics.append(node.get_heuristic())
+            total_costs.append(node.get_total_cost())
+
+        # Convert lists to numpy arrays
+        x = np.array(x)
+        y = np.array(y)
+        costs = np.array(costs)
+        heuristics = np.array(heuristics)
+        total_costs = np.array(total_costs)
+
+        # Create subplots
+        fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+        # Plot costs
+        sc1 = axs[0].scatter(x, y, c=costs, cmap='viridis', marker='o')
+        axs[0].set_title('Cost')
+        axs[0].set_xlabel('X')
+        axs[0].set_ylabel('Y')
+        fig.colorbar(sc1, ax=axs[0], label='Cost')
+
+        # Plot heuristics
+        sc2 = axs[1].scatter(x, y, c=heuristics, cmap='viridis', marker='o')
+        axs[1].set_title('Heuristic')
+        axs[1].set_xlabel('X')
+        axs[1].set_ylabel('Y')
+        fig.colorbar(sc2, ax=axs[1], label='Heuristic')
+
+        # Plot total costs
+        sc3 = axs[2].scatter(x, y, c=total_costs, cmap='viridis', marker='o')
+        axs[2].set_title('Total Cost')
+        axs[2].set_xlabel('X')
+        axs[2].set_ylabel('Y')
+        fig.colorbar(sc3, ax=axs[2], label='Total Cost')
+
+        # Display the plots
+        plt.tight_layout()
+        plt.show()
+
+    def plot_expanded_nodes(self, expanded):
+        # Plot the expanded.values() and connections
+        plt.figure(figsize=(10, 8))
+
+        # Plot each node
+        for node in expanded.values():
+            x, y = node.state[0], node.state[1]
+            plt.scatter(x, y, c='skyblue', s=100)  # Plot the node
+            # plt.text(x, y, f'({x}, {y})', fontsize=9, ha='right')  # Label the node
+
+        # Plot the connections
+        for node in expanded.values():
+            for child in node.children:
+                x_values = [node.state[0], child.state[0]]
+                y_values = [node.state[1], child.state[1]]
+                plt.plot(x_values, y_values, 'gray')
+
+        # Customize the plot
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('Graph Visualization Based on Node Positions')
+        plt.grid(True)
+        plt.show()

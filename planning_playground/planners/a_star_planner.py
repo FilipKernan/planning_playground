@@ -43,6 +43,7 @@ class AStarPlanner:
         # add the start node to the open list
         closed_dict[start.state] = start
         neighbors = self.get_neighboring_nodes(start, goal, result.timing_data)
+        print(neighbors)
         for neighbor in neighbors:
             open_list.append(neighbor)
         end_setup_time = time.time()
@@ -50,6 +51,7 @@ class AStarPlanner:
         # while the open list is not empty
         open_set = set([open_node.state for open_node in open_list])
         heapq.heapify(open_list)
+        print(open_list)
         while len(open_list) > 0:
             # get the current node
             start_expanding = time.time()
@@ -95,32 +97,25 @@ class AStarPlanner:
                     heapq.heappush(open_list, neighbor)
                     current_node.add_child(neighbor)
                     open_set.add(neighbor.state)
+
                 end_checking_closed = time.time()
                 result.timing_data["checking_closed"] += end_checking_closed - start_checking_closed
-                           # add the current node to the closed list
+
             closed_dict[current_node.get_state()] = current_node
             end_expanding = time.time()
             result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
+            
             if self.within_termination_bounds(current_node.get_state(), goal.get_state()):
+                
                 start_path = time.time()
-                path = []
-                print("goal found")
-                current = current_node
-                while current is not None:
-                    print("adding node to path", current.state)
-                    path.append(current.state)
-                    if current.parent is not None:
-                        print("parent", current.parent.state)
-                    current = current.parent
-                print("path", path)
-                path.reverse()
+                result.path = self.get_path(current_node)
                 end_time = time.time()
                 result.timing_data["path_creation"] = end_time - start_path
                 result.timing_data["total"] = end_time - start_time
-                result.path = path
                 result.expended_nodes = closed_dict
                 result.total_cost = current_node.get_total_cost()
+                
                 return result
 
         return result
@@ -128,7 +123,19 @@ class AStarPlanner:
     def within_termination_bounds(self, state, goal):
         return np.linalg.norm(np.array(state[:2]) - np.array(goal[:2])) < self.motion_model.position_discretization and abs(state[2] - goal[2]) < self.motion_model.orientation_discretization 
 
-        
+    def rewire(self, node, neighbor, closed_dict, open_list):
+        if neighbor.get_state() in closed_dict:
+            closed_node = closed_dict[neighbor.get_state()]
+            if neighbor.get_total_cost() < closed_node.get_total_cost():
+                closed_dict.pop(neighbor.get_state())
+                closed_node.parent.remove_child(closed_node)
+                for child in closed_node.get_children():
+                    child.parent = neighbor
+                closed_dict[neighbor.get_state()] = neighbor
+                heapq.heappush(open_list, neighbor)
+                node.add_child(neighbor) 
+                return True
+        return False
 
     def get_neighboring_nodes(self, node, goal, timing_data):
         start_time = time.time()
@@ -141,3 +148,17 @@ class AStarPlanner:
             neighbor_nodes.append(new_node)
         timing_data["getting_neighbors"] += time.time() - start_time
         return neighbor_nodes
+
+    def get_path(self, node):
+        path = []
+        current = node
+
+        while current is not None:
+            print("adding node to path", current.state)
+            path.append(current.state)
+            if current.parent is not None:
+                print("parent", current.parent.state)
+            current = current.parent
+        
+        path.reverse()
+        return path

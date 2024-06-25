@@ -15,6 +15,7 @@ matplotlib = "^3.9.0"
 networkx = "^3.3"
 scipy = "^1.13.1"
 shapely = "^2.0.4"
+triangle = "^20230923"
 
 
 [build-system]
