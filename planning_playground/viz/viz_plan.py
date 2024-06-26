@@ -1,7 +1,6 @@
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
-import planning_playground.planners.a_star_planner as a_star_planner
+import numpy as np
 
 
 class VizPlan:
@@ -18,29 +17,33 @@ class VizPlan:
         # resize the image
         plt.imshow(image_copy)
 
-    def linear_interpolate(self, point: float, old_range: tuple[float], new_range: tuple[float]):
-        old_min, old_max = old_range
-        new_min, new_max = new_range
+    def linear_interpolate(
+        self, point: float, old_range: tuple[float], new_range: tuple[float]
+    ):
+        _, old_max = old_range
+        _, new_max = new_range
         old_value = point
         new_value = max(0, new_max * (old_value / old_max))
         return int(new_value)
 
-    def plot_path(self): 
+    def plot_path(self):
         image_copy = self.map.map.copy()
         # make the image copy 3 channels
-        old_range = (0, self.map.grid_size)
-        new_range = (0, self.map.map.shape[0])
         for i in range(len(self.path) - 1):
             point = self.motion_model.get_points(self.path[i])
             next_point = self.motion_model.get_points(self.path[i + 1])
             cv2.line(image_copy, point, next_point, (0, 0, 255), 5)
- 
-        image_copy = cv2.circle(image_copy, self.motion_model.get_points(self.start), 5, (0, 255, 0), -1)
-        image_copy = cv2.circle(image_copy, self.motion_model.get_points(self.goal), 5, (255, 0, 0), -1)
+
+        image_copy = cv2.circle(
+            image_copy, self.motion_model.get_points(self.start), 5, (0, 255, 0), -1
+        )
+        image_copy = cv2.circle(
+            image_copy, self.motion_model.get_points(self.goal), 5, (255, 0, 0), -1
+        )
         plt.imshow(image_copy)
         plt.title("Path")
-        plt.xlabel('X')
-        plt.ylabel('Y')
+        plt.xlabel("X")
+        plt.ylabel("Y")
         plt.show()
 
     def get_plotted_map(self):
@@ -50,19 +53,18 @@ class VizPlan:
         goal = self.goal[0], self.goal[1]
         image_copy = cv2.circle(image_copy, start, 5, (0, 255, 0), -1)
         image_copy = cv2.circle(image_copy, goal, 5, (255, 0, 0), -1)
-        plt.imshow(image_copy, cmap='gray')
-        plt.title('Map Visualization')
-        plt.xlabel('X')
-        plt.ylabel('Y')
+        plt.imshow(image_copy, cmap="gray")
+        plt.title("Map Visualization")
+        plt.xlabel("X")
+        plt.ylabel("Y")
         plt.grid(True)
-    
+
     def plot_map(self):
         # Plot the map
         self.get_plotted_map()
         plt.show()
-    
+
     def plot_cost_and_heuristic(self, expanded):
-        
         # Extract data
         x = []
         y = []
@@ -88,25 +90,25 @@ class VizPlan:
         fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
         # Plot costs
-        sc1 = axs[0].scatter(x, y, c=costs, cmap='viridis', marker='o')
-        axs[0].set_title('Cost')
-        axs[0].set_xlabel('X')
-        axs[0].set_ylabel('Y')
-        fig.colorbar(sc1, ax=axs[0], label='Cost')
+        sc1 = axs[0].scatter(x, y, c=costs, cmap="viridis", marker="o")
+        axs[0].set_title("Cost")
+        axs[0].set_xlabel("X")
+        axs[0].set_ylabel("Y")
+        fig.colorbar(sc1, ax=axs[0], label="Cost")
 
         # Plot heuristics
-        sc2 = axs[1].scatter(x, y, c=heuristics, cmap='viridis', marker='o')
-        axs[1].set_title('Heuristic')
-        axs[1].set_xlabel('X')
-        axs[1].set_ylabel('Y')
-        fig.colorbar(sc2, ax=axs[1], label='Heuristic')
+        sc2 = axs[1].scatter(x, y, c=heuristics, cmap="viridis", marker="o")
+        axs[1].set_title("Heuristic")
+        axs[1].set_xlabel("X")
+        axs[1].set_ylabel("Y")
+        fig.colorbar(sc2, ax=axs[1], label="Heuristic")
 
         # Plot total costs
-        sc3 = axs[2].scatter(x, y, c=total_costs, cmap='viridis', marker='o')
-        axs[2].set_title('Total Cost')
-        axs[2].set_xlabel('X')
-        axs[2].set_ylabel('Y')
-        fig.colorbar(sc3, ax=axs[2], label='Total Cost')
+        sc3 = axs[2].scatter(x, y, c=total_costs, cmap="viridis", marker="o")
+        axs[2].set_title("Total Cost")
+        axs[2].set_xlabel("X")
+        axs[2].set_ylabel("Y")
+        fig.colorbar(sc3, ax=axs[2], label="Total Cost")
 
         # Display the plots
         plt.tight_layout()
@@ -119,7 +121,7 @@ class VizPlan:
         # Plot each node
         for node in expanded.values():
             x, y = node.state[0], node.state[1]
-            plt.scatter(x, y, c='skyblue', s=100)  # Plot the node
+            plt.scatter(x, y, c="skyblue", s=100)  # Plot the node
             # plt.text(x, y, f'({x}, {y})', fontsize=9, ha='right')  # Label the node
 
         # Plot the connections
@@ -127,11 +129,11 @@ class VizPlan:
             for child in node.children:
                 x_values = [node.state[0], child.state[0]]
                 y_values = [node.state[1], child.state[1]]
-                plt.plot(x_values, y_values, 'gray')
+                plt.plot(x_values, y_values, "gray")
 
         # Customize the plot
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('Graph Visualization Based on Node Positions')
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.title("Graph Visualization Based on Node Positions")
         plt.grid(True)
         plt.show()

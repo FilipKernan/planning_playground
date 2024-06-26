@@ -1,21 +1,17 @@
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
 import planning_playground.planners.rrt_planner as rrt_planner
-import planning_playground.planners.a_star_planner as astar_planner
-from planning_playground.planners.types import PathPlanningResult
-from planning_playground.planners.types import Node
 import planning_playground.viz.viz_plan as viz_plan
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
+from planning_playground.planners.types import PathPlanningResult
 
-# create planner builder class 
+# create planner builder class
 # should take in a map, motion model, heruistic, and planner type
 # should have a plan method that takes in a start and goal state
 # should return a PathPlanningResult
 
 # create a motion model builder class
 # should take in a map, and a motion model type, and the state space
+
 
 def main(debug=False):
     # Create a map
@@ -27,7 +23,7 @@ def main(debug=False):
     goal = (900, 900, 0)
     motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=False)
     result = PathPlanningResult()
-    a_star = rrt_planner.RRTPlanner(map  motion_model)
+    a_star = rrt_planner.RRTPlanner(map, motion_model)
     result = a_star.plan(start, goal)
     print(result.path)
     path = result.path
@@ -36,14 +32,13 @@ def main(debug=False):
     viz = viz_plan.VizPlan(map, path, motion_model, start, goal)
     viz.plot_path()
     print("delta time", delta_time)
-    sum_val = sum(value for key, value in delta_time.items() if key != "total" and key != "expanding")
-    print("total time", delta_time["total"] )
+    print("total time", delta_time["total"])
     # print("expanded", expanded)
     print("number of nodes expanded", len(expanded))
-    if debug == False:
+    if not debug:
         return
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(debug=True)

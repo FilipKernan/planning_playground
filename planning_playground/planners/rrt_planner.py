@@ -1,9 +1,11 @@
-import planning_playground.planners.abstract_planner as abstract_planner
 import time
+
 import numpy as np
-from planning_playground.planners.types import Node
-from planning_playground.planners.types import PathPlanningResult
+
+import planning_playground.planners.abstract_planner as abstract_planner
 from planning_playground.motion_models.holonomic_model import HolonomicModel
+from planning_playground.planners.types import Node, PathPlanningResult
+
 
 class RRTPlanner(abstract_planner.AbstractPlanner):
     def __init__(self, map, motion_model: HolonomicModel):
@@ -17,7 +19,6 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         self.delta_q = 10
         self.goal_threshold = 1000
         self.goal_bias = 0.1
-
 
     def plan(self, start, goal):
         result = PathPlanningResult()
@@ -39,11 +40,22 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             rand_node.cost = rand_node.get_cost()
             nearest_node.children.append(rand_node)
             self.nodes[rand_node.get_state()] = rand_node
-            
-            if self.motion_model.get_distance(rand_node.get_state(), self.goal_node.get_state()) < self.goal_threshold and \
-                False == self.motion_model.collision_check_along_line(rand_node.get_state(), self.goal_node.get_state(), result.timing_data):
-                
-                self.goal_threshold = self.motion_model.get_distance(rand_node.get_state(), self.goal_node.get_state())
+
+            if (
+                self.motion_model.get_distance(
+                    rand_node.get_state(), self.goal_node.get_state()
+                )
+                < self.goal_threshold
+                and 
+                 not self.motion_model.collision_check_along_line(
+                    rand_node.get_state(),
+                    self.goal_node.get_state(),
+                    result.timing_data,
+                )  
+            ):
+                self.goal_threshold = self.motion_model.get_distance(
+                    rand_node.get_state(), self.goal_node.get_state()
+                )
                 print("new goal threshold", self.goal_threshold)
                 self.goal_node.parent = rand_node
                 print("goal state parent", self.goal_node.parent.get_state())
@@ -59,7 +71,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         result.expended_nodes = self.nodes
         result.total_cost = self.goal_node.get_cost()
         return result
-    
+
     def get_nearest_node(self, node: Node, timing_data):
         start_time = time.time()
         nearest_node = None
@@ -69,11 +81,12 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             if dist < nearest_dist:
                 nearest_dist = dist
                 nearest_node = n
-        if self.motion_model.collision_check_along_line(nearest_node.get_state(), node.get_state(), timing_data):
+        if self.motion_model.collision_check_along_line(
+            nearest_node.get_state(), node.get_state(), timing_data
+        ):
             nearest_node = None
         timing_data["getting_neighbors"] = time.time() - start_time
         return nearest_node
-
 
     def get_path(self, node):
         path = []
@@ -88,6 +101,6 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
                 path.append(current_node.state)
                 break
             count += 1
-        
+
         path.reverse()
         return path

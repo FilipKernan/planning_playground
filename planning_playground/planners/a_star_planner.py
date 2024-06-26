@@ -1,20 +1,18 @@
-import planning_playground.planners.abstract_planner as abstract_planner
-import planning_playground.map.import_map as import_map
-from planning_playground.planners.types import Node
-from planning_playground.planners.types import PathPlanningResult
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
-import time
 import heapq
+import time
+
+import numpy as np
+
+import planning_playground.map.import_map as import_map
+import planning_playground.planners.abstract_planner as abstract_planner
+from planning_playground.planners.types import Node, PathPlanningResult
 
 # todo create viz for testing path planning
-    # todo create a function that takes a map and a path and displays the path on the map
-    # todo animate the robot along the path
-    # todo support paths that are not defined by x,y points, but by the state space of the robot
+# todo create a function that takes a map and a path and displays the path on the map
+# todo animate the robot along the path
+# todo support paths that are not defined by x,y points, but by the state space of the robot
 # todo create a collision checker class
 # todo create a path class
-
 
 
 class AStarPlanner(abstract_planner.AbstractPlanner):
@@ -26,7 +24,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
     # and that the robot can move in any direction - holonomic
     # todo - add the robot size as a parameter
 
-    #Make the state space in the full map size and have the helpers that interact with the map convert the state space to the grid space
+    # Make the state space in the full map size and have the helpers that interact with the map convert the state space to the grid space
 
     def plan(self, start_state, goal_state, benchmark=False):
         result = PathPlanningResult()
@@ -63,19 +61,24 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             # remove the current node from the open list
             try:
                 open_set.remove(current_node.get_state())
-            except:
+            except KeyError:
                 print("node not in open:", current_node.get_state())
-            neighbors = self.get_neighboring_nodes(current_node, goal, result.timing_data)
+            neighbors = self.get_neighboring_nodes(
+                current_node, goal, result.timing_data
+            )
 
             for neighbor in neighbors:
-                
                 start_collision_check = time.time()
                 if neighbor.get_state() in open_set:
                     end_collision_check = time.time()
-                    result.timing_data["collision_check"] += end_collision_check - start_collision_check
+                    result.timing_data["collision_check"] += (
+                        end_collision_check - start_collision_check
+                    )
                     continue
 
-                if self.motion_model.collision_check(neighbor.get_state(), result.timing_data):
+                if self.motion_model.collision_check(
+                    neighbor.get_state(), result.timing_data
+                ):
                     continue
                 # print("state is not in collision!")
                 # print("neighbor", neighbor.get_state())
@@ -87,28 +90,34 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 # we should remove the one in the closed list and add the neighbor to the open list
                 if neighbor.state in closed_dict:
                     closed_node = closed_dict[neighbor.state]
-                    if neighbor.get_total_cost() < closed_node.get_total_cost() and closed_node != start:
+                    if (
+                        neighbor.get_total_cost() < closed_node.get_total_cost()
+                        and closed_node != start
+                    ):
                         # print("removing node from closed list", closed_node.get_state())
                         closed_dict.pop(neighbor.state)
                         closed_node.parent.remove_child(closed_node)
                         for child in closed_node.get_children():
                             child.parent = neighbor
                         closed_dict[neighbor.state] = neighbor
-                else: 
+                else:
                     heapq.heappush(open_list, neighbor)
                     current_node.add_child(neighbor)
                     open_set.add(neighbor.state)
 
                 end_checking_closed = time.time()
-                result.timing_data["checking_closed"] += end_checking_closed - start_checking_closed
+                result.timing_data["checking_closed"] += (
+                    end_checking_closed - start_checking_closed
+                )
 
             closed_dict[current_node.get_state()] = current_node
             end_expanding = time.time()
             result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
-            
-            if self.within_termination_bounds(current_node.get_state(), goal.get_state()):
-                
+
+            if self.within_termination_bounds(
+                current_node.get_state(), goal.get_state()
+            ):
                 start_path = time.time()
                 result.path = self.get_path(current_node)
                 end_time = time.time()
@@ -116,13 +125,17 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 result.timing_data["total"] = end_time - start_time
                 result.expended_nodes = closed_dict
                 result.total_cost = current_node.get_total_cost()
-                
+
                 return result
 
         return result
 
     def within_termination_bounds(self, state, goal):
-        return np.linalg.norm(np.array(state[:2]) - np.array(goal[:2])) < self.motion_model.position_discretization and abs(state[2] - goal[2]) < self.motion_model.orientation_discretization 
+        return (
+            np.linalg.norm(np.array(state[:2]) - np.array(goal[:2]))
+            < self.motion_model.position_discretization
+            and abs(state[2] - goal[2]) < self.motion_model.orientation_discretization
+        )
 
     def rewire(self, node, neighbor, closed_dict, open_list):
         if neighbor.get_state() in closed_dict:
@@ -134,7 +147,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                     child.parent = neighbor
                 closed_dict[neighbor.get_state()] = neighbor
                 heapq.heappush(open_list, neighbor)
-                node.add_child(neighbor) 
+                node.add_child(neighbor)
                 return True
         return False
 
@@ -160,6 +173,6 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             if current.parent is not None:
                 print("parent", current.parent.state)
             current = current.parent
-        
+
         path.reverse()
         return path
