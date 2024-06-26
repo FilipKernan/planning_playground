@@ -1,16 +1,17 @@
+import planning_playground.map.abstract_map as abstract_map
 import triangle
 import cv2
 import numpy as np
 
-class Map2d:
+class Map2d(abstract_map.AbstractMap):
     # This only supports square maps for now
     def __init__(self, image_path, grid_size=10):
-        self.hulls = None
+        self.convex_obstacles = None
         self.map_dimentions = None
-        self.image = None
+        self.map = None
         self.image_path = image_path
-        self.image = self.import_map(image_path)
-        self.map_dimentions, self.hulls = self.get_map_dimentions_and_obstacles()
+        self.map = self.import_map(image_path)
+        self.map_dimentions, self.convex_obstacles = self.get_map_dimentions_and_obstacles()
         self.grid_size = grid_size
         self.create_map_graph()
 
@@ -24,7 +25,6 @@ class Map2d:
         else:
             print('Failed to load the image.')
         return image
-
 
     # get the dementions of a map
     def get_map_dimentions(self):
@@ -40,7 +40,7 @@ class Map2d:
         # print("getting map convex obstacles")        
         # Check if the image was loaded successfully
         # Convert the image to grayscale
-        gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(self.map, cv2.COLOR_BGR2GRAY)
         gray = cv2.rectangle(gray, (0, 0), (gray.shape[1], gray.shape[0]), (255, 255, 255), 5)
         cv2.imshow("gray", gray)
         # Apply a threshold to the image
@@ -50,8 +50,8 @@ class Map2d:
         dialated = cv2.dilate(thresh, kernel, iterations=2)
         # Find contours in the image
         contours, _ = cv2.findContours(dialated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        cv2.drawContours(self.image, contours, -1, (0, 255, 0), 4)
-        cv2.imshow("hello", self.image)
+        cv2.drawContours(self.map, contours, -1, (0, 255, 0), 4)
+        cv2.imshow("hello", self.map)
 
         hull_list = []
         for contour in contours:
@@ -74,8 +74,8 @@ class Map2d:
                 hull_list.append(np.array(pts, dtype=np.int32))
 
 
-        cv2.drawContours(self.image, hull_list, -1, (0, 127, 255), 1)
-        cv2.imshow("Image", self.image)
+        cv2.drawContours(self.map, hull_list, -1, (0, 127, 255), 1)
+        cv2.imshow("Image", self.map)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         return hull_list
@@ -86,7 +86,7 @@ class Map2d:
 
         # Check if the image was loaded successfully
         # Get the dimensions of the image
-        height, width, channels = self.image.shape
+        height, width, channels = self.map.shape
         map_dimentions = (height, width)    
         hulls = self.get_map_convex_obstacles()
 
@@ -99,7 +99,7 @@ class Map2d:
         # Check if the image was loaded successfully
         # Convert the image to grayscale
         ##  print("creating map graph")
-        gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(self.map, cv2.COLOR_BGR2GRAY)
 
         # Apply a threshold to the image
         _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY_INV)

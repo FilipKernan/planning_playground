@@ -1,10 +1,11 @@
+import planning_playground.planners.abstract_planner as abstract_planner
 import time
 import numpy as np
 from planning_playground.planners.types import Node
 from planning_playground.planners.types import PathPlanningResult
 from planning_playground.motion_models.holonomic_model import HolonomicModel
 
-class RRTPlanner:
+class RRTPlanner(abstract_planner.AbstractPlanner):
     def __init__(self, map, motion_model: HolonomicModel):
         self.map = map
         self.motion_model = motion_model
@@ -28,7 +29,7 @@ class RRTPlanner:
         while sample_count < self.max_iter:
             start_expanding = time.time()
             # create a sampler class base class that has a get_random_state method
-            random_state = self.motion_model.get_random_state_within_map(result.timing_data)
+            random_state = self.motion_model.sample_state(result.timing_data)
             rand_node = Node(self.motion_model, random_state)
             nearest_node = self.get_nearest_node(rand_node, result.timing_data)
             if nearest_node is None:
@@ -58,11 +59,6 @@ class RRTPlanner:
         result.expended_nodes = self.nodes
         result.total_cost = self.goal_node.get_cost()
         return result
-    
-    def get_random_node(self, timing_data):
-        random_state = self.motion_model.get_random_state(timing_data)
-        new_node = Node(self.motion_model, random_state)
-        return new_node
     
     def get_nearest_node(self, node: Node, timing_data):
         start_time = time.time()

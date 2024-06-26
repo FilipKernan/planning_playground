@@ -16,7 +16,7 @@ class HolonomicModel:
     def get_points(self, state):
         return state[0], state[1]
     
-    def get_neighbor_states(self, state):
+    def get_neighbor_states(self, state, timing_data):
         neighbors = []
         if self.is_discrete:
             
@@ -60,11 +60,11 @@ class HolonomicModel:
         timing_data["calc_heuristic"] += time.time() - start_heuristic
         return h
     
-    def get_random_state_within_map(self, timing_data):
+    def sample_state(self, timing_data):
         start_time = time.time()
         new_state = None
         while new_state is None:
-            new_state = (np.random.randint(0, self.map.map_dimentions[0]), np.random.randint(0, self.map.map_dimentions[1]), np.random.randint(0, 360))
+            new_state = (np.random.randint(0, self.map.get_map_dimentions()[0]), np.random.randint(0, self.map.get_map_dimentions[1]), np.random.randint(0, 360))
             if self.collision_check(new_state, timing_data  ):
                 new_state = None
         timing_data["sampling"] += time.time() - start_time
@@ -73,7 +73,7 @@ class HolonomicModel:
     def collision_check_along_line(self, start, end, timing_data):
         # get the points between start and end
         start_collision_check = time.time()
-        contours = self.map.hulls
+        contours = self.map.get_convex_obstacles()
         for contour in contours:
             contour = np.squeeze(contour)
             polygon = Polygon(contour)
@@ -86,7 +86,7 @@ class HolonomicModel:
     # returns true if there is a collision, false if there is not
     def collision_check(self, state, timing_data, descritized_map = True):
        start_collision_check = time.time()
-       height, width = self.map.map_dimentions
+       height, width = self.map.get_map_dimentions()
        if state[0] < 0 or state[1] < 0 or state[0] >= width or state[1] >= height:
            end_collision_check = time.time()
            timing_data["collision_check"] += end_collision_check - start_collision_check

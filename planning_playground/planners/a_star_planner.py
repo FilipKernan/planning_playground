@@ -1,3 +1,4 @@
+import planning_playground.planners.abstract_planner as abstract_planner
 import planning_playground.map.import_map as import_map
 from planning_playground.planners.types import Node
 from planning_playground.planners.types import PathPlanningResult
@@ -16,7 +17,7 @@ import heapq
 
 
 
-class AStarPlanner:
+class AStarPlanner(abstract_planner.AbstractPlanner):
     def __init__(self, map: import_map.Map2d, motion_model):
         self.map = map
         self.motion_model = motion_model
@@ -139,7 +140,7 @@ class AStarPlanner:
 
     def get_neighboring_nodes(self, node, goal, timing_data):
         start_time = time.time()
-        neighbors = node.get_neighbor_states()
+        neighbors = node.get_neighbor_states(timing_data)
         neighbor_nodes = []
         for neighbor in neighbors:
             new_node = Node(self.motion_model, neighbor, node)

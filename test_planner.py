@@ -5,11 +5,17 @@ import planning_playground.planners.a_star_planner as astar_planner
 from planning_playground.planners.types import PathPlanningResult
 from planning_playground.planners.types import Node
 import planning_playground.viz.viz_plan as viz_plan
-import networkx as nx
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+# create planner builder class 
+# should take in a map, motion model, heruistic, and planner type
+# should have a plan method that takes in a start and goal state
+# should return a PathPlanningResult
+
+# create a motion model builder class
+# should take in a map, and a motion model type, and the state space
 
 def main(debug=False):
     # Create a map
@@ -19,9 +25,9 @@ def main(debug=False):
     # todo: make a ui for chousing the start and goal
     start = (0, 0, 0)
     goal = (900, 900, 0)
-    motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=True)
+    motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=False)
     result = PathPlanningResult()
-    a_star = astar_planner.AStarPlanner(map,  motion_model)
+    a_star = rrt_planner.RRTPlanner(map  motion_model)
     result = a_star.plan(start, goal)
     print(result.path)
     path = result.path

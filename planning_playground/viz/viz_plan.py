@@ -13,7 +13,7 @@ class VizPlan:
         self.goal = goal
 
     def plot_map(self):
-        image_copy = self.map.image.copy()
+        image_copy = self.map.map.copy()
         # make the image copy 3 channels
         # resize the image
         plt.imshow(image_copy)
@@ -26,10 +26,10 @@ class VizPlan:
         return int(new_value)
 
     def plot_path(self): 
-        image_copy = self.map.image.copy()
+        image_copy = self.map.map.copy()
         # make the image copy 3 channels
         old_range = (0, self.map.grid_size)
-        new_range = (0, self.map.image.shape[0])
+        new_range = (0, self.map.map.shape[0])
         for i in range(len(self.path) - 1):
             point = self.motion_model.get_points(self.path[i])
             next_point = self.motion_model.get_points(self.path[i + 1])
@@ -44,7 +44,7 @@ class VizPlan:
         plt.show()
 
     def get_plotted_map(self):
-        image_copy = self.map.image.copy()
+        image_copy = self.map.map.copy()
         plt.figure(figsize=(10, 8))
         start = self.start[0], self.start[1]
         goal = self.goal[0], self.goal[1]

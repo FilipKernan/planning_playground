@@ -26,9 +26,6 @@ class Node:
     def calculate_heuristic(self, goal, timing_data):
         self.heuristic = self.heuristic_eq(goal, timing_data)
 
-    def get_distance(self, other):
-        return np.linalg.norm(np.array(self.state) - np.array(other.state))
-
     def get_heuristic(self):
         if self.heuristic is None:
             timing_data = {"calc_heuristic": 0}
@@ -44,8 +41,8 @@ class Node:
     def get_total_cost(self):
         return self.get_cost() + self.get_heuristic()
 
-    def get_neighbor_states(self):
-        return self.motion_model.get_neighbor_states(self.state)
+    def get_neighbor_states(self, timing_data):
+        return self.motion_model.get_neighbor_states(self.state, timing_data)
     
     def get_children(self):
         return self.children
