@@ -1,7 +1,7 @@
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
-import planning_playground.planners.rrt_planner as rrt_planner
 import planning_playground.viz.viz_plan as viz_plan
+from planning_playground.planners.rrt_star_planner import RRTStarPlanner
 from planning_playground.planners.types import PathPlanningResult
 
 # create planner builder class
@@ -23,8 +23,8 @@ def main(debug=False):
     goal = (900, 900, 0)
     motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=False)
     result = PathPlanningResult()
-    a_star = rrt_planner.RRTPlanner(map, motion_model)
-    result = a_star.plan(start, goal)
+    planner = RRTStarPlanner(map, motion_model)
+    result = planner.plan(start, goal)
     print(result.path)
     path = result.path
     delta_time = result.timing_data
@@ -37,6 +37,8 @@ def main(debug=False):
     print("number of nodes expanded", len(expanded))
     if not debug:
         return
+    viz.plot_expanded_nodes(expanded)
+
     return
 
 

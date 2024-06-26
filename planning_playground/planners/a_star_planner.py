@@ -3,7 +3,8 @@ import time
 
 import numpy as np
 
-import planning_playground.map.import_map as import_map
+from planning_playground.map.abstract_map import AbstractMap
+from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
 import planning_playground.planners.abstract_planner as abstract_planner
 from planning_playground.planners.types import Node, PathPlanningResult
 
@@ -16,7 +17,7 @@ from planning_playground.planners.types import Node, PathPlanningResult
 
 
 class AStarPlanner(abstract_planner.AbstractPlanner):
-    def __init__(self, map: import_map.Map2d, motion_model):
+    def __init__(self, map: AbstractMap, motion_model: AbstractMotionModel):
         self.map = map
         self.motion_model = motion_model
 

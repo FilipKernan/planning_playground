@@ -9,12 +9,12 @@ class Map2d(abstract_map.AbstractMap):
     # This only supports square maps for now
     def __init__(self, image_path, grid_size=10):
         self.convex_obstacles = None
-        self.map_dimentions = None
+        self.map_dimensions = None
         self.map = None
         self.image_path = image_path
         self.map = self.import_map(image_path)
-        self.map_dimentions, self.convex_obstacles = (
-            self.get_map_dimentions_and_obstacles()
+        self.map_dimensions, self.convex_obstacles = (
+            self.get_map_dimensions_and_obstacles()
         )
         self.grid_size = grid_size
         self.create_map_graph()
@@ -30,12 +30,12 @@ class Map2d(abstract_map.AbstractMap):
         return image
 
     # get the dementions of a map
-    def get_map_dimentions(self):
+    def get_map_dimensions(self):
         # Load the image using OpenCV
 
         # Check if the image was loaded successfully
         # Get the dimensions of the image
-        return self.map_dimentions
+        return self.map_dimensions
 
     # get the contours of the map as a set of convex polygons
     def get_map_convex_obstacles(self):
@@ -83,17 +83,17 @@ class Map2d(abstract_map.AbstractMap):
         cv2.destroyAllWindows()
         return hull_list
 
-    # write a function that gets the dimentions of the map and the set of all convex polygons
-    def get_map_dimentions_and_obstacles(self):
+    # write a function that gets the dimensions of the map and the set of all convex polygons
+    def get_map_dimensions_and_obstacles(self):
         # Load the image using OpenCV
 
         # Check if the image was loaded successfully
         # Get the dimensions of the image
         height, width, channels = self.map.shape
-        map_dimentions = (height, width)
+        map_dimensions = (height, width)
         hulls = self.get_map_convex_obstacles()
 
-        return map_dimentions, hulls
+        return map_dimensions, hulls
 
     # create a graph from the map using a grid of nodes and a discretized version of the map
     def create_map_graph(self):
@@ -112,15 +112,15 @@ class Map2d(abstract_map.AbstractMap):
         # Find contours in the image
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         kernel = np.ones((10, 10), np.uint8)  # this should be a parameter
-        dialated = cv2.dilate(thresh, kernel, iterations=2)
-        cv2.imshow("dialated", dialated)
-        self.collision_map = dialated
+        dilated = cv2.dilate(thresh, kernel, iterations=2)
+        cv2.imshow("dilated", dilated)
+        self.collision_map = dilated
         # Resize input to "pixelated" size
-        pixilized = cv2.resize(
-            dialated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR
+        pixilated = cv2.resize(
+            dilated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR
         )
-        self.pixilized = pixilized
-        cv2.imshow("pixilized", pixilized)
+        self.pixilized = pixilated
+        cv2.imshow("pixilated", pixilated)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         print("creating nodes " + str(self.grid_size**2))
@@ -129,7 +129,7 @@ class Map2d(abstract_map.AbstractMap):
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 nodes[i, j] = (
-                    pixilized[i, j],
+                    pixilated[i, j],
                     (i * self.grid_size, j * self.grid_size),
                 )
 
@@ -153,7 +153,7 @@ class Map2d(abstract_map.AbstractMap):
         return value
 
     def scale(self, OldValue):
-        OldRange = 0 - self.map_dimentions[0]
+        OldRange = 0 - self.map_dimensions[0]
         NewRange = 0 - self.grid_size
         NewValue = (((OldValue - 0) * NewRange) / OldRange) + 0
         return NewValue

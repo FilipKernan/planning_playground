@@ -65,8 +65,11 @@ class Node:
             parent.get_state(), child.get_state(), timing_data
         )
 
+    def __str__(self):
+        return str(self.get_state())
+
     def heuristic_eq(self, goal_state, timing_data):
-        return self.motion_model.calc_heurisitc(
+        return self.motion_model.calc_heuristic(
             self.get_state(), goal_state.get_state(), timing_data
         )
 
@@ -87,6 +90,7 @@ class PathPlanningResult:
             "getting_neighbors": 0,
             "node_creation": 0,
             "sampling": 0,
+            "rewiring": 0,
         }
         self.expended_nodes = {}
         self.total_cost = 0

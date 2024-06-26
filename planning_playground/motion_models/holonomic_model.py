@@ -13,7 +13,7 @@ class HolonomicModel:
         is_discrete=True,
     ):
         self.position_discretization = (
-            map.map_dimentions[0] // map.grid_size
+            map.map_dimensions[0] // map.grid_size
         )  # the distance between each point in the grid
         self.orientation_discretization = 45
         self.is_discrete = is_discrete
@@ -67,7 +67,7 @@ class HolonomicModel:
             timing_data["calc_cost"] += time.time() - start_cost
         return cost
 
-    def calc_heurisitc(self, current_state, goal, timing_data):
+    def calc_heuristic(self, current_state, goal, timing_data):
         start_heuristic = time.time()
         h = np.linalg.norm(
             np.array((current_state[0], current_state[1]))
@@ -84,13 +84,14 @@ class HolonomicModel:
         new_state = None
         while new_state is None:
             new_state = (
-                np.random.randint(0, self.map.get_map_dimentions()[0]),
-                np.random.randint(0, self.map.get_map_dimentions[1]),
+                np.random.randint(0, self.map.get_map_dimensions()[0]),
+                np.random.randint(0, self.map.get_map_dimensions()[1]),
                 np.random.randint(0, 360),
             )
             if self.collision_check(new_state, timing_data):
                 new_state = None
         timing_data["sampling"] += time.time() - start_time
+        print("sampled state: ", new_state)
         return new_state
 
     def collision_check_along_line(self, start, end, timing_data):
@@ -109,7 +110,7 @@ class HolonomicModel:
     # returns true if there is a collision, false if there is not
     def collision_check(self, state, timing_data, descritized_map=True):
         start_collision_check = time.time()
-        height, width = self.map.get_map_dimentions()
+        height, width = self.map.get_map_dimensions()
         if state[0] < 0 or state[1] < 0 or state[0] >= width or state[1] >= height:
             end_collision_check = time.time()
             timing_data["collision_check"] += (
