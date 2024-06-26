@@ -16,9 +16,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         self.goal = None
         self.goal_node = None
         self.max_iter = 300
-        self.delta_q = 10
         self.goal_threshold = 1000
-        self.goal_bias = 0.1
 
     def plan(self, start, goal):
         result = PathPlanningResult()
@@ -46,12 +44,11 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
                     rand_node.get_state(), self.goal_node.get_state()
                 )
                 < self.goal_threshold
-                and 
-                 not self.motion_model.collision_check_along_line(
+                and not self.motion_model.collision_check_along_line(
                     rand_node.get_state(),
                     self.goal_node.get_state(),
                     result.timing_data,
-                )  
+                )
             ):
                 self.goal_threshold = self.motion_model.get_distance(
                     rand_node.get_state(), self.goal_node.get_state()
