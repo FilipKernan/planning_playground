@@ -1,3 +1,7 @@
+import sys
+import numpy as np
+
+
 class Node:
     def __init__(self, motion_model, state, parent=None):
         self.state = state
@@ -67,6 +71,9 @@ class Node:
 
     def __str__(self):
         return str(self.get_state())
+
+    def __hash__(self) -> int:
+        return self.get_state().__hash__()
 
     def heuristic_eq(self, goal_state, timing_data):
         return self.motion_model.calc_heuristic(

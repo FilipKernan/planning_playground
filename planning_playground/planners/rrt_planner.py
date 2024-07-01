@@ -27,6 +27,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         sample_count = 0
         while sample_count < self.max_iter:
             start_expanding = time.time()
+            sample_count += 1
             # create a sampler class base class that has a get_random_state method
             random_state = self.motion_model.sample_state(result.timing_data)
             rand_node = Node(self.motion_model, random_state)
@@ -58,7 +59,6 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
                 print("goal state parent", self.goal_node.parent.get_state())
 
             result.timing_data["expanding"] += time.time() - start_expanding
-            sample_count += 1
 
             if sample_count % 100 == 0:
                 print("sample count", sample_count)

@@ -64,7 +64,14 @@ class HolonomicModel:
             else:
                 cost += dist
 
-            timing_data["calc_cost"] += time.time() - start_cost
+        else:
+            dist = np.linalg.norm(
+                np.array((current_state[0], current_state[1]))
+                - np.array((next_state[0], next_state[1]))
+            )
+            cost += dist
+            # should add something else here about changing heading
+        timing_data["calc_cost"] += time.time() - start_cost
         return cost
 
     def calc_heuristic(self, current_state, goal, timing_data):

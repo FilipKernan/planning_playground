@@ -59,24 +59,25 @@ class Map2d(abstract_map.AbstractMap):
         cv2.imshow("hello", self.map)
 
         hull_list = []
+        # for contour in contours:
+        #     # Convert the contour to a format suitable for the triangle library
+        #     contour_points = contour.squeeze().tolist()
+        #     segments = [
+        #         [i, (i + 1) % len(contour_points)] for i in range(len(contour_points))
+        #     ]
+
+        #     # Create the input dictionary for the triangle library
+        #     contour_dict = {"vertices": contour_points, "segments": segments}
+
+        #     # Triangulate the contour using the triangle library
+        #     t = triangle.triangulate(contour_dict, "pq0")
+
+        #     # Reconstruct the convex polygons from the triangulation
+        #     for triangle_indices in t["triangles"]:
+        #         pts = [t["vertices"][i] for i in triangle_indices]
+        #         hull_list.append(np.array(pts, dtype=np.int32))
         for contour in contours:
-            # Convert the contour to a format suitable for the triangle library
-            contour_points = contour.squeeze().tolist()
-            segments = [
-                [i, (i + 1) % len(contour_points)] for i in range(len(contour_points))
-            ]
-
-            # Create the input dictionary for the triangle library
-            contour_dict = {"vertices": contour_points, "segments": segments}
-
-            # Triangulate the contour using the triangle library
-            t = triangle.triangulate(contour_dict, "pq0")
-
-            # Reconstruct the convex polygons from the triangulation
-            for triangle_indices in t["triangles"]:
-                pts = [t["vertices"][i] for i in triangle_indices]
-                hull_list.append(np.array(pts, dtype=np.int32))
-
+            hull_list.append(contour)
         cv2.drawContours(self.map, hull_list, -1, (0, 127, 255), 1)
         cv2.imshow("Image", self.map)
         cv2.waitKey(0)

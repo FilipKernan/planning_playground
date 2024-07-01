@@ -116,7 +116,7 @@ class VizPlan:
 
     def plot_expanded_nodes(self, expanded):
         # Plot the expanded.values() and connections
-        plt.figure(figsize=(10, 8))
+        self.get_plotted_map()
 
         # Plot each node
         for node in expanded.values():
@@ -126,6 +126,23 @@ class VizPlan:
 
         # Plot the connections
         for node in expanded.values():
+            if node.parent is not None:
+                parent_x_values = [node.state[0], node.parent.state[0]]
+                parent_y_values = [node.state[1], node.parent.state[1]]
+                parent_x = node.parent.state[0]
+                parent_y = node.parent.state[1]
+                current_x = node.state[0]
+                current_y = node.state[1]
+                plt.arrow(
+                    parent_x,
+                    parent_y,
+                    current_x - parent_x,
+                    current_y - parent_y,
+                    head_width=5.0,
+                    head_length=5,
+                    fc="red",
+                    ec="red",
+                )
             for child in node.children:
                 x_values = [node.state[0], child.state[0]]
                 y_values = [node.state[1], child.state[1]]
