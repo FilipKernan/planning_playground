@@ -55,6 +55,17 @@ class Node:
         child.parent = None
         return child
 
+    def get_ancestry(self):
+        current_node = self
+        ancestry = []
+        count = 0
+        ancestry_limit = 1000
+        while current_node is not None and count < ancestry_limit:
+            ancestry.append(current_node)
+            current_node = current_node.parent
+            count += 1
+        return ancestry
+
     def __eq__(self, other):
         return self.state == other.state
 

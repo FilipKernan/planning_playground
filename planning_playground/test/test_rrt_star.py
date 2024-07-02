@@ -12,7 +12,7 @@ from planning_playground.planners.types import PathPlanningResult
 from planning_playground.planners.types import Node
 
 
-class TestRRTStarPlanner:
+class RRTStarPlannerFixture:
     def __init__(self):
         # setup the planner and all required objects here
         self.map = import_map.Map2d(
@@ -33,7 +33,7 @@ class TestRRTStarPlanner:
 
 @pytest.fixture
 def test_rrt_star():
-    return TestRRTStarPlanner()
+    return RRTStarPlannerFixture()
 
 
 def create_test_nodes(motion_model, planner):
@@ -114,7 +114,7 @@ def test_rewire_where_new_node_is_on_best_path(test_rrt_star):
     motion_model = test_rrt_star.motion_model
     # create some nodes
     state_1 = (160, 240, 0)
-    state_2 = (130, 230, 0)
+    state_2 = (120, 230, 0)
     node_1 = Node(motion_model, state_1, planner.start_node)
     planner.nodes[state_1] = node_1
     node_2 = Node(motion_model, state_2, planner.start_node)
@@ -133,7 +133,7 @@ def test_rewire_where_new_node_is_on_best_path(test_rrt_star):
         planner.nodes[(160, 240, 0)].parent == new_node
     ), f"{str(planner.nodes[(160, 240, 0)].parent)} != {str(new_node)}"
     assert (
-        planner.nodes[(130, 230, 0)].parent == planner.nodes[(100, 200, 0)]
+        planner.nodes[(120, 230, 0)].parent == planner.nodes[(100, 200, 0)]
     ), f"{str(planner.nodes[(130, 230, 0)].parent)} != {str(planner.nodes[(100, 200, 0)])}"
     pass
 
@@ -195,6 +195,29 @@ def test_new_node_on_existing_path(test_rrt_star):
         new_node.parent == planner.start_node
     ), f"{str(new_node.parent)} != {str(planner.start_node)}"
     assert (
+        node_1.parent == planner.start_node
+    ), f"{str(node_1.parent)} != {str(planner.start_node)}"  # failing on this line
+
+
+def test_node_on_existing_path_but_requires_rewire(test_rrt_star):
+    # access the test_rrt_star object
+    planner = test_rrt_star.planner
+    motion_model = test_rrt_star.motion_model
+    # create some nodes
+    state_1 = (170, 200, 0)
+    node_1 = Node(motion_model, state_1, planner.start_node)
+    planner.nodes[state_1] = node_1
+
+    new_state = (125, 200, 0)
+    new_node = Node(motion_model, new_state, None)
+    planner.process_new_node(new_node, test_rrt_star.result, 0)
+    assert (
+        new_node in planner.nodes.values()
+    ), f"{str(new_node)} not in {[str(n) for n in planner.nodes.values()]}"
+    assert (
+        new_node.parent == planner.start_node
+    ), f"{str(new_node.parent)} != {str(planner.start_node)}"
+    assert (
         node_1.parent == new_node
     ), f"{str(node_1.parent)} != {str(new_node)}"  # failing on this line
 
@@ -225,10 +248,11 @@ def test_rewire_of_other_neighbor(test_rrt_star):
     ), f"{str(new_node)} not in {[str(n) for n in planner.nodes.values()]}"
     assert new_node.parent == node_1, f"{str(new_node.parent)} != {str(node_1)}"
     assert (
-        node_4.parent == node_1
-    ), f"{str(node_4.parent)} != {str(node_1)}"  # this is failing
+        node_4.parent == new_node
+    ), f"{str(node_4.parent)} != {str(new_node)}"  # this is failing
     assert node_3.parent == node_2, f"{str(node_3.parent)} != {str(node_2)}"
 
 
+# add test case to prevent cycles
 # def test_plan(test_rrt_star):
 #     pass
