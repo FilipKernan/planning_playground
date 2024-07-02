@@ -25,9 +25,10 @@ def main(debug=False):
     # Create a map
     print("creating map")
     map = import_map.Map2d("planning_playground/map/map_dense750.png", grid_size=60)
+    # map = import_map.Map2d("planning_playground/map/map106.png", grid_size=60)
     print("created map")
     # todo: make a ui for chousing the start and goal
-    cv2.imshow("map", map.map)
+    # cv2.imshow("map", map.map)
     # cv2.setMouseCallback("map", set_start_goal)
     # cv2.waitKey(0)
     print("start", start)

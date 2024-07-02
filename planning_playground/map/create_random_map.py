@@ -3,7 +3,7 @@ import numpy as np
 
 
 class MapCreator:
-    def __init__(self, width, height, grid_size, min_obstacles=15, max_obstacles=50):
+    def __init__(self, width, height, grid_size, min_obstacles=0, max_obstacles=1):
         self.width = width
         self.height = height
         self.grid_size = grid_size

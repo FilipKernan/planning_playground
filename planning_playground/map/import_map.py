@@ -47,7 +47,7 @@ class Map2d(abstract_map.AbstractMap):
         gray = cv2.rectangle(
             gray, (0, 0), (gray.shape[1], gray.shape[0]), (255, 255, 255), 5
         )
-        cv2.imshow("gray", gray)
+        # cv2.imshow("gray", gray)
         # Apply a threshold to the image
         _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
 
@@ -56,7 +56,7 @@ class Map2d(abstract_map.AbstractMap):
         # Find contours in the image
         contours, _ = cv2.findContours(dialated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.drawContours(self.map, contours, -1, (0, 255, 0), 4)
-        cv2.imshow("hello", self.map)
+        # cv2.imshow("hello", self.map)
 
         hull_list = []
         # for contour in contours:
@@ -79,8 +79,8 @@ class Map2d(abstract_map.AbstractMap):
         for contour in contours:
             hull_list.append(contour)
         cv2.drawContours(self.map, hull_list, -1, (0, 127, 255), 1)
-        cv2.imshow("Image", self.map)
-        cv2.waitKey(0)
+        # cv2.imshow("Image", self.map)
+        # cv2.waitKey(0)
         cv2.destroyAllWindows()
         return hull_list
 
@@ -108,21 +108,21 @@ class Map2d(abstract_map.AbstractMap):
         # Apply a threshold to the image
         _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY_INV)
         # print("thresh", thresh)
-        cv2.imshow("thresh", thresh)
+        # cv2.imshow("thresh", thresh)
 
         # Find contours in the image
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         kernel = np.ones((10, 10), np.uint8)  # this should be a parameter
         dilated = cv2.dilate(thresh, kernel, iterations=2)
-        cv2.imshow("dilated", dilated)
+        # cv2.imshow("dilated", dilated)
         self.collision_map = dilated
         # Resize input to "pixelated" size
         pixilated = cv2.resize(
             dilated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR
         )
         self.pixilized = pixilated
-        cv2.imshow("pixilated", pixilated)
-        cv2.waitKey(0)
+        # cv2.imshow("pixilated", pixilated)
+        # cv2.waitKey(0)
         cv2.destroyAllWindows()
         print("creating nodes " + str(self.grid_size**2))
         # Create a grid of nodes
