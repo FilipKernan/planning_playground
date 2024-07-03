@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 from shapely.geometry import LineString, Polygon
+from planning_playground.map.abstract_map import AbstractMap
 
 
 class HolonomicModel:
@@ -9,7 +10,7 @@ class HolonomicModel:
         self,
         max_linear_velocity: tuple[float, float],
         max_angular_velocity,
-        map,
+        map: AbstractMap,
         is_discrete=True,
     ):
         self.position_discretization = (
@@ -101,7 +102,7 @@ class HolonomicModel:
         print("sampled state: ", new_state)
         return new_state
 
-    def collision_check_along_line(self, start, end, timing_data):
+    def collision_check_between_states(self, start, end, timing_data):
         # get the points between start and end
         start_collision_check = time.time()
         contours = self.map.get_convex_obstacles()
@@ -112,6 +113,21 @@ class HolonomicModel:
                 timing_data["collision_check"] += time.time() - start_collision_check
                 return True
         timing_data["collision_check"] += time.time() - start_collision_check
+        return False
+
+    def collision_check_between_states_spec(self, start, end, timing_data):
+        # get the points between start and end
+        start_collision_check = time.time()
+        contours = self.map.get_convex_obstacles()
+        for contour in contours:
+            contour = np.squeeze(contour)
+            polygon = Polygon(contour)
+            if polygon.intersects(LineString([start, end])):
+                timing_data["collision_check_spec"] += (
+                    time.time() - start_collision_check
+                )
+                return True
+        timing_data["collision_check_spec"] += time.time() - start_collision_check
         return False
 
     # returns true if there is a collision, false if there is not

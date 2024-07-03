@@ -1,10 +1,12 @@
 import cv2
+from matplotlib import pyplot as plt
+
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
 import planning_playground.viz.viz_plan as viz_plan
-from planning_playground.planners.rrt_star_planner import RRTStarPlanner
-from planning_playground.planners.rrt_planner import RRTPlanner
 from planning_playground.planners.a_star_planner import AStarPlanner
+from planning_playground.planners.rrt_planner import RRTPlanner
+from planning_playground.planners.rrt_star_planner import RRTStarPlanner
 from planning_playground.planners.types import PathPlanningResult
 
 # create planner builder class
@@ -37,8 +39,17 @@ def main(debug=False):
     result = PathPlanningResult()
     planner = RRTStarPlanner(map, motion_model)
     result = planner.plan(start, goal)
-    print(result.path)
-    path = result.path
+    path = []
+
+    if result.path is None:
+        print("!" * 100)
+        print("no path found")
+        print("^" * 100)
+        path = []
+    else:
+        print(result.path)
+        path = result.path
+
     delta_time = result.timing_data
     expanded = result.expended_nodes
     viz = viz_plan.VizPlan(map, path, motion_model, start, goal)
@@ -50,6 +61,7 @@ def main(debug=False):
     if not debug:
         return
     viz.plot_expanded_nodes(expanded)
+    plt.show()
     # viz.plot_cost_and_heuristic(expanded)
     # longest_edge = 0
     # print(expanded)

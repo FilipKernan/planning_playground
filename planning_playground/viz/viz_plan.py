@@ -40,11 +40,11 @@ class VizPlan:
         image_copy = cv2.circle(
             image_copy, self.motion_model.get_points(self.goal), 5, (255, 0, 0), -1
         )
+        plt.figure()
         plt.imshow(image_copy)
         plt.title("Path")
         plt.xlabel("X")
         plt.ylabel("Y")
-        plt.show()
 
     def get_plotted_map(self):
         image_copy = self.map.map.copy()
@@ -72,6 +72,7 @@ class VizPlan:
         heuristics = []
         total_costs = []
 
+        plt.figure()
         for (x_coord, y_coord, _), node in expanded.items():
             x.append(x_coord)
             y.append(y_coord)
@@ -153,4 +154,3 @@ class VizPlan:
         plt.ylabel("Y")
         plt.title("Graph Visualization Based on Node Positions")
         plt.grid(True)
-        plt.show()

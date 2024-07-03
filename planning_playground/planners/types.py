@@ -101,6 +101,7 @@ class PathPlanningResult:
             "calc_cost": 0,
             "calc_heuristic": 0,
             "collision_check": 0,
+            "collision_check_spec": 0,
             "checking_closed": 0,
             "sorting": 0,
             "setup": 0,

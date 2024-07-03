@@ -5,10 +5,12 @@ import numpy as np
 import planning_playground.planners.abstract_planner as abstract_planner
 from planning_playground.motion_models.holonomic_model import HolonomicModel
 from planning_playground.planners.types import Node, PathPlanningResult
+from planning_playground.map.abstract_map import AbstractMap
+from planning_playground.planners.types import Node
 
 
 class RRTPlanner(abstract_planner.AbstractPlanner):
-    def __init__(self, map, motion_model: HolonomicModel):
+    def __init__(self, map: AbstractMap, motion_model: HolonomicModel):
         self.map = map
         self.motion_model = motion_model
         self.nodes = {}
@@ -16,7 +18,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         self.goal = None
         self.goal_node = None
         self.max_iter = 300
-        self.goal_threshold = 1000
+        self.goal_threshold = 500
 
     def plan(self, start, goal):
         result = PathPlanningResult()
@@ -45,7 +47,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
                     rand_node.get_state(), self.goal_node.get_state()
                 )
                 < self.goal_threshold
-                and not self.motion_model.collision_check_along_line(
+                and not self.motion_model.collision_check_between_states(
                     rand_node.get_state(),
                     self.goal_node.get_state(),
                     result.timing_data,
@@ -78,7 +80,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             if dist < nearest_dist:
                 nearest_dist = dist
                 nearest_node = n
-        if self.motion_model.collision_check_along_line(
+        if self.motion_model.collision_check_between_states(
             nearest_node.get_state(), node.get_state(), timing_data
         ):
             nearest_node = None
@@ -100,4 +102,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             count += 1
 
         path.reverse()
+        if len(path) == 0 or len(path) == 1:
+            print("no path found")
+            return None
         return path

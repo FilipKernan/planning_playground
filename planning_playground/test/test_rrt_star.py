@@ -170,7 +170,7 @@ def test_rewire_where_new_node_close_to_high_cost_node(test_rrt_star):
         new_node in planner.nodes.values()
     ), f"{str(new_node)} not in {[str(n) for n in planner.nodes.values()]}"
     assert new_node.parent == node_1, f"{str(new_node.parent)} != {str(node_1)}"
-    assert node_3.parent == new_node, f"{str(node_3.parent)} != {str(new_node)}"
+    assert node_3.parent == node_1, f"{str(node_3.parent)} != {str(node_1)}"
     assert (
         node_2.parent == planner.nodes[(100, 200, 0)]
     ), f"{str(node_2.parent)} != {str(planner.nodes[(100, 200, 0)])}"

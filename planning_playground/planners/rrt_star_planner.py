@@ -14,10 +14,13 @@ from planning_playground.planners.types import Node, PathPlanningResult
 class RRTStarPlanner(rrt_planner.RRTPlanner):
     def __init__(self, map: AbstractMap, motion_model: AbstractMotionModel):
         super().__init__(map, motion_model)
-        self.radius = 100
-        self.rewire_threshold = 0.5
+        # note: dense maps require more itterations
+        # idea: create anytime planner that modulates the max itterations and the radius
+        # todo: do timing analysis because this algo is running slow rn
+        self.radius = 50
         self.max_iter = 300
         self.path_limit = 1000  # limiting paths to 1000 nodes
+        self.goal_threshold = self.radius * 2
 
     def plan(self, start: tuple, goal: tuple):
         result = PathPlanningResult()
@@ -59,53 +62,35 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             result.timing_data["expanding"] += time.time() - start_expanding
             return
 
-        print("rand node", rand_node.get_state())
         rand_node.parent = nearest
         rand_node.calculate_cost(result.timing_data)
-        print("rewiring neighborhood")
-        neighborhood = sorted(neighborhood)
+
         if len(neighborhood) > 0:
-            print("*" * 50)
-            print("nearest node", nearest.get_state())
-            print("rand node", rand_node.get_state())
-            print("random node cost before", rand_node.cost)
-            print("neighborhood", [str(n) for n in neighborhood])
-            print(
-                "cost for each of the neighbors: ", [n.get_cost() for n in neighborhood]
-            )
             cost_to_random_node_for_each_neighbor = [
                 n.get_cost()
                 + self.motion_model.get_distance(n.get_state(), rand_node.get_state())
                 for n in neighborhood
             ]
-            print(
-                "cost to random node for each neighbor",
-                cost_to_random_node_for_each_neighbor,
-            )
             if any(
                 x < rand_node.get_cost() for x in cost_to_random_node_for_each_neighbor
             ):
-                print("REWIRING IS REQUIRED HERE")
                 self.rewire(rand_node, neighborhood, result.timing_data)
                 rand_node.calculate_cost(result.timing_data)
-            self.nodes[rand_node.get_state()] = rand_node
-            self.rewire_neighborhood(rand_node, neighborhood, result)
-            # self.rewire(neighbor, neighbor_hood_copy, result.timing_data)
-            # self.re_calc_cost(neighborhood, result.timing_data)
-            print("*" * 50)
-        if len(neighborhood) == 1:
-            return
-        rand_node.cost = rand_node.get_cost()
         self.nodes[rand_node.get_state()] = rand_node
+        self.rewire_neighborhood(rand_node, neighborhood, result)
         # this needs to use the cost to get the nearest node to the goal state, fix this after fixing the neighborhood rewire
-        if self.motion_model.calc_cost(
-            rand_node.get_state(),
-            self.goal_node.get_state(),
-            result.timing_data,
-        ) < self.goal_threshold and not self.motion_model.collision_check_along_line(
-            rand_node.get_state(),
-            self.goal_node.get_state(),
-            result.timing_data,
+        if (
+            self.motion_model.calc_cost(
+                rand_node.get_state(),
+                self.goal_node.get_state(),
+                result.timing_data,
+            )
+            < self.goal_threshold
+            and not self.motion_model.collision_check_between_states(
+                rand_node.get_state(),
+                self.goal_node.get_state(),
+                result.timing_data,
+            )
         ):
             self.goal_threshold = self.motion_model.calc_cost(
                 rand_node.get_state(),
@@ -125,8 +110,6 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             )
             if distance < self.radius:
                 nodes_within_radius.add(expanded_node)
-        # print("closest nodes", closest_nodes)
-        # nodes_within_radius.add(node)
         nodes_within_radius = list(nodes_within_radius)
         print(
             f"Found {len(nodes_within_radius)} nodes within radius of {node.get_state()}"
@@ -136,15 +119,13 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
 
         return nearest, nodes_within_radius
 
-    def re_calc_cost(self, nodes, timing_data):
-        for node in nodes:
-            node.cost = None
-        self.start_node.cost = 0
-        for node in nodes:
-            node.calculate_cost(timing_data)
-
     # todo break this up if you can, but you need to put a doc string here
-    def rewire_neighborhood(self, node: Node, neighborhood: list[Node], result):
+    # also add timing data to this
+    # I think this can use the rewire node
+    def rewire_neighborhood(
+        self, node: Node, neighborhood: list[Node], result: PathPlanningResult
+    ):
+        start_time = time.time()
         neighborhood_with_new_node = neighborhood.copy()
         neighborhood_with_new_node.append(node)
         for neighbor in neighborhood:
@@ -153,73 +134,67 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             neighbor_cost_with_new_node = [
                 (
                     n.get_cost()
-                    + self.motion_model.get_distance(
-                        neighbor.get_state(), n.get_state()
+                    + self.motion_model.calc_cost(
+                        neighbor.get_state(), n.get_state(), result.timing_data
                     ),
                     n,
                 )
                 for n in inner_neighborhood
             ]
             heapq.heapify(neighbor_cost_with_new_node)
-            print(len(neighbor_cost_with_new_node))
-            while len(neighbor_cost_with_new_node) > 0:
+            # THis loop is taking up most of the time, mostly in collision checking and calculating cost
+            rewired = False
+            distance_to_parent = 0
+            if neighbor.parent is not None:
+                distance_to_parent = self.motion_model.calc_cost(
+                    neighbor.get_state(),
+                    neighbor.parent.get_state(),
+                    result.timing_data,
+                )
+            while len(neighbor_cost_with_new_node) > 0 and not rewired:
                 x = heapq.heappop(neighbor_cost_with_new_node)
-                print(f"neighbor {str(neighbor)}'s cost to {str(x[1])} is {str(x[0])}")
+                cost_from_neighbor_to_x = self.motion_model.calc_cost(
+                    neighbor.get_state(), x[1].get_state(), result.timing_data
+                )
+                print(
+                    f"trying to rewire {str(neighbor)} with {str(x[1])} which has a cost of {x[0]} while the current cost is {neighbor.get_cost()}"
+                )
                 if (
-                    (
-                        x[0] < neighbor.get_cost()
-                        and not self.motion_model.collision_check_along_line(
-                            x[1].get_state(), neighbor.get_state(), result.timing_data
-                        )
-                        or (
-                            self.motion_model.get_distance(
-                                x[1].get_state(), neighbor.get_state()
-                            )
-                            < self.radius
-                            and (
-                                neighbor.parent is not None
-                                and self.motion_model.get_distance(
-                                    neighbor.get_state(), neighbor.parent.get_state()
-                                )
-                                > self.radius
-                            )
-                        )  # this last condition makes sure that we do not rewire outside of the neighborhood of the node we are rewiring
-                    )
+                    (x[0] < neighbor.get_cost() or distance_to_parent > self.radius)
                     and x[1].parent is not None
                     and x[1].parent != neighbor
                     and self.can_reach_start(x[1])
                     and neighbor not in x[1].get_ancestry()
                 ):
-                    print(
-                        f"rewiring is required for {str(neighbor)} with the new node at {str(x[1])}"
-                    )
-                    print("-" * 50)
-                    self.nodes[neighbor.get_state()].parent = self.nodes[
-                        x[1].get_state()
-                    ]
-                    neighbor.parent = self.nodes[x[1].get_state()]
-                    neighbor.calculate_cost(result.timing_data)
-                    self.nodes[neighbor.get_state()].calculate_cost(result.timing_data)
-                    print(
-                        f"neighbor {str(self.nodes[neighbor.get_state()])}'s new parent is {str(x[1])}"
-                    )
-                    break
+                    print("trying to rewire")
+                    if (
+                        cost_from_neighbor_to_x <= self.radius
+                        and not self.motion_model.collision_check_between_states_spec(
+                            x[1].get_state(), neighbor.get_state(), result.timing_data
+                        )
+                    ):
+                        self.nodes[neighbor.get_state()].parent = self.nodes[
+                            x[1].get_state()
+                        ]
+                        neighbor.parent = self.nodes[x[1].get_state()]
+                        neighbor.calculate_cost(result.timing_data)
+                        self.nodes[neighbor.get_state()].calculate_cost(
+                            result.timing_data
+                        )
+                        print("successful rewire")
+                        rewired = True
+                    else:
+                        print("collision detected")
+        result.timing_data["rewiring"] += time.time() - start_time
 
-    # todo: right now rewring to theh node that was just created is not allowed due to a bug
+    # rewires the node that was just sampled. This has to be a special case because the node has just been added
+    # above is a weak statement, check to see if it is actually true
     def rewire(self, node: Node, neighborhood: list[Node], timing_data):
         start_time = time.time()
         rewire_list = []
         if len(neighborhood) == 1:
             return
-        if node.parent is None:
-            # temp_parent = Node(self.motion_model, (300, 300, 0), None)
-            # temp_parent.cost = 10
-            node.parent = neighborhood[0]
-            node.calculate_cost(timing_data)
         for n in neighborhood:
-            if n is node:
-                print(f"Node at {str(node)} is the same as {str(n)}")
-                continue
             current_cost = n.get_cost()
             if np.isnan(n.get_cost()):
                 current_cost = sys.float_info.max
@@ -230,30 +205,19 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                     n,
                 )
             )
-        print(
-            f"For node at {node.get_state()} the rewire list is {[(n[0], n[1].get_state()) for n in rewire_list]}"
-        )
         heapq.heapify(rewire_list)
         parent = node.parent
         while len(rewire_list) > 0:
             possible_parent = heapq.heappop(rewire_list)
             if node.get_cost() > possible_parent[0]:
-                print(
-                    f"Node at {str(node)}'s cost is {node.get_cost()} and is greater than {str(possible_parent[1])} with rewire cost if  {possible_parent[0]}"
-                )
-                if self.motion_model.collision_check_along_line(
+                if self.motion_model.collision_check_between_states(
                     node.get_state(), possible_parent[1].get_state(), timing_data
                 ):
-                    print(
-                        f"line between {str(node)} and {str(possible_parent[1])} is in collision"
-                    )
                     continue
                 parent = possible_parent[1]
                 node.parent = parent
-                print(f"Node at {str(node)}'s new parent is {str(parent)}")
                 node.calculate_cost(timing_data)
 
-        print(f"Node at {str(node)}'s final parent is {str(parent)}")
         timing_data["rewiring"] += time.time() - start_time
 
     def can_reach_start(self, node: Node):
