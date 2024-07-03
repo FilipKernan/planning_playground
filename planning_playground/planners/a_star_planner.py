@@ -131,7 +131,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
 
         return result
 
-    def within_termination_bounds(self, state, goal):
+    def within_termination_bounds(self, state, goal) -> bool:
         return (
             np.linalg.norm(np.array(state[:2]) - np.array(goal[:2]))
             < self.motion_model.position_discretization
@@ -152,7 +152,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 return True
         return False
 
-    def get_neighboring_nodes(self, node, goal, timing_data):
+    def get_neighboring_nodes(self, node, goal, timing_data) -> list[Node]:
         start_time = time.time()
         neighbors = node.get_neighbor_states(timing_data)
         neighbor_nodes = []
