@@ -169,7 +169,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                     print("trying to rewire")
                     if (
                         cost_from_neighbor_to_x <= self.radius
-                        and not self.motion_model.collision_check_between_states_spec(
+                        and not self.motion_model.collision_check_between_states(
                             x[1].get_state(), neighbor.get_state(), result.timing_data
                         )
                     ):

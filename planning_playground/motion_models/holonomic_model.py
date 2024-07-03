@@ -115,21 +115,6 @@ class HolonomicModel:
         timing_data["collision_check"] += time.time() - start_collision_check
         return False
 
-    def collision_check_between_states_spec(self, start, end, timing_data):
-        # get the points between start and end
-        start_collision_check = time.time()
-        contours = self.map.get_convex_obstacles()
-        for contour in contours:
-            contour = np.squeeze(contour)
-            polygon = Polygon(contour)
-            if polygon.intersects(LineString([start, end])):
-                timing_data["collision_check_spec"] += (
-                    time.time() - start_collision_check
-                )
-                return True
-        timing_data["collision_check_spec"] += time.time() - start_collision_check
-        return False
-
     # returns true if there is a collision, false if there is not
     def collision_check(self, state, timing_data, descritized_map=True):
         start_collision_check = time.time()
