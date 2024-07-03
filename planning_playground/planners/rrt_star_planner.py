@@ -16,8 +16,8 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         super().__init__(map, motion_model)
         # note: dense maps require more itterations
         # idea: create anytime planner that modulates the max itterations and the radius
-        # todo: do timing analysis because this algo is running slow rn
-        self.radius = 50
+        # todo: radius and max itterations should be parameters
+        self.radius = 100
         self.max_iter = 300
         self.path_limit = 1000  # limiting paths to 1000 nodes
         self.goal_threshold = self.radius * 2
