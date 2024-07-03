@@ -6,6 +6,9 @@ from planning_playground.map.abstract_map import AbstractMap
 
 
 class AbstractMotionModel(ABC):
+    map: AbstractMap
+    is_discrete: bool
+
     @abstractmethod
     def __init__(self, map: AbstractMap):
         self.map = map

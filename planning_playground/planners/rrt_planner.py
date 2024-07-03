@@ -75,7 +75,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         start_time = time.time()
         nearest_node = None
         nearest_dist = np.inf
-        for state, n in self.nodes.items():
+        for n in self.nodes.values():
             dist = self.motion_model.get_distance(n.get_state(), node.get_state())
             if dist < nearest_dist:
                 nearest_dist = dist
@@ -89,7 +89,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
 
     def get_path(self, node):
         path = []
-        current_node = node
+        current_node: Node = node
         count = 0
 
         while current_node is not None and count < 1000:

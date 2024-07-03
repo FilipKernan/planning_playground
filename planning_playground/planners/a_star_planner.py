@@ -33,8 +33,8 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
         start_time = time.time()
         # get the start and goal nodes
         # create the open and closed lists
-        open_list = []
-        closed_dict = {}
+        open_list: list[Node] = []
+        closed_dict: dict[tuple, Node] = {}
         goal = Node(self.motion_model, goal_state, None)
         start = Node(self.motion_model, start_state, None)
         start.calculate_cost(result.timing_data)
@@ -176,4 +176,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             current = current.parent
 
         path.reverse()
+        if len(path) == 0 or len(path) == 1:
+            print("no path found")
+            return None
         return path

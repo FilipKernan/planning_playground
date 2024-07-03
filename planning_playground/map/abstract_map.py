@@ -4,6 +4,12 @@ import numpy as np
 
 
 class AbstractMap(ABC):
+    map: np.ndarray
+    map_dimensions: tuple
+    grid_size: int
+    is_discrete: bool
+    convex_obstacles: list[tuple]
+
     def __init__(self, map_path: str, resolution: tuple, origin: tuple, grid_size: int):
         self.map_path = map_path
         self.resolution = resolution
