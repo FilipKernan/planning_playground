@@ -47,6 +47,16 @@
         - Monte Carlo Tree Search?
     * should take in a start, goal, graph, motion model, and a map
     * should return a path
+    - Local Planners:
+        - DWA - dynamic window approach
+        - TEB - Timed Elastic Band
+        - Lattice Planner
+        - LQR-RRT*
+        - MPC - modified for local planning
+        - ORCA - optimal reciprocal collision avoidance
+        - APF - artificial potential fields
+        - VAPF - vortex artificial potential fields
+        - VFH - vector field histogram
 6. Implement visualization
     - each node should be 1 second apart
     - should show the path
