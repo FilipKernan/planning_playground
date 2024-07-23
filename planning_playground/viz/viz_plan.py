@@ -1,5 +1,8 @@
 import cv2
 import matplotlib.pyplot as plt
+import matplotlib.quiver as quiver
+from planning_playground.planners.types import Node
+
 import numpy as np
 
 
@@ -32,6 +35,8 @@ class VizPlan:
         for i in range(len(self.path) - 1):
             point = self.motion_model.get_points(self.path[i])
             next_point = self.motion_model.get_points(self.path[i + 1])
+            print("point", point)
+            print("next_point", next_point)
             cv2.line(image_copy, point, next_point, (0, 0, 255), 5)
 
         image_copy = cv2.circle(
@@ -72,7 +77,6 @@ class VizPlan:
         heuristics = []
         total_costs = []
 
-        plt.figure()
         for (x_coord, y_coord, _), node in expanded.items():
             x.append(x_coord)
             y.append(y_coord)
@@ -115,19 +119,70 @@ class VizPlan:
         plt.tight_layout()
         plt.show()
 
-    def plot_expanded_nodes(self, expanded):
+    def plot_expanded_nodes(self, expanded: dict[tuple[float], Node]):
         # Plot the expanded.values() and connections
         self.get_plotted_map()
 
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        # get the max cost in the dict
+        xs = []
+        ys = []
+        thetas = []
+        costs = []
         # Plot each node
         for node in expanded.values():
-            x, y = node.state[0], node.state[1]
-            plt.scatter(x, y, c="skyblue", s=100)  # Plot the node
-            # plt.text(x, y, f'({x}, {y})', fontsize=9, ha='right')  # Label the node
+            if node.parent is None:
+                continue
+            x, y, z = node.get_state()[0], node.get_state()[1], node.get_state()[2]
+            # convert the total cost into a color for matplotlib
+            xs.append(x)
+            ys.append(y)
+            thetas.append(z)
+            costs.append(node.get_total_cost())
+            parent_x = node.parent.get_state()[0]
+            parent_y = node.parent.get_state()[1]
+            parent_z = node.parent.get_state()[2]
+            plt.plot([x, parent_x], [y, parent_y], [z, parent_z], "gray")
+        # plt.text(x, y, f'({x}, {y})', fontsize=9, ha='right')  # Label the node
 
+        sc = ax.scatter(
+            xs,
+            ys,
+            zs=thetas,
+            c=costs,
+            cmap="viridis",
+            s=100,
+        )  # Plot the node
+        fig.colorbar(sc, ax=ax, label="Cost")
         # Plot the connections
+        plt.show()
+        states = [node.state for node in expanded.values()]
         for node in expanded.values():
-            if node.parent is not None:
+            # for child in node.children:
+            #     x_values = [node.state[0], child.state[0]]
+            #     y_values = [node.state[1], child.state[1]]
+            #     plt.plot(x_values, y_values, "gray")
+            # if node.parent is None and node.state != (150, 300, 0):
+            # print("no parent")
+            # print("node", node.state)
+            # print("parent", node.parent)
+            # print("node children", node.children)
+
+            # if (
+            #     node.state != (150, 300, 0)
+            #     and node.parent.state != (150, 300, 0)
+            #     and node.parent.parent is not None
+            #     and node.parent.state != (150, 300, 0)
+            # ):
+            #     if node.parent.parent.get_state() not in states:
+            #         print("no parent")
+            #         print("node", node.state)
+            #         print("parent", node.parent)
+            #         print("node children", node.children)
+            # exit(1)
+
+            if node.state != (150, 300, 0):
                 parent_x_values = [node.state[0], node.parent.state[0]]
                 parent_y_values = [node.state[1], node.parent.state[1]]
                 parent_x = node.parent.state[0]
@@ -144,10 +199,6 @@ class VizPlan:
                     fc="red",
                     ec="red",
                 )
-            for child in node.children:
-                x_values = [node.state[0], child.state[0]]
-                y_values = [node.state[1], child.state[1]]
-                plt.plot(x_values, y_values, "gray")
 
         # Customize the plot
         plt.xlabel("X")

@@ -65,6 +65,7 @@
     - show expansion of the graph in real time and in slowed down time
 7. Implement path smoothing 
     - simple spline
+    - simple spline but with collision checking using the map
     - bezier curve
     - optimization based - use drake for optimization? Or maybe just scipy?
 8. Implement velocty planning

@@ -16,12 +16,13 @@ class Node:
         self.cost = np.nan
         self.heuristic = np.nan
         self.children = []
-        if parent is not None:
-            parent.add_child(self)
 
     # todo - add a get neighbors function that uses the motion model to get the neighbors states
     def get_state(self):
         return self.state
+
+    def get_discrete_state(self):
+        return self.motion_model.discretize(self.state)
 
     def calculate_cost(self, timing_data):
         if self.parent is not None:
@@ -34,7 +35,9 @@ class Node:
 
     def calculate_heuristic(self, goal, timing_data):
         self.heuristic = self.heuristic_eq(goal, timing_data)
-        print("heuristic", self.heuristic)
+        # print("heuristic", self.heuristic)
+        # print("goal", goal)
+        # print("state: ", self.get_state())
 
     def get_heuristic(self):
         if self.heuristic is None or np.isnan(self.heuristic):
@@ -56,14 +59,6 @@ class Node:
 
     def get_children(self):
         return self.children
-
-    def add_child(self, child):
-        self.children.append(child)
-
-    def remove_child(self, child):
-        self.children.remove(child)
-        child.parent = None
-        return child
 
     def get_ancestry(self):
         current_node = self
@@ -126,5 +121,5 @@ class PathPlanningResult:
             "sampling": 0,
             "rewiring": 0,
         }
-        self.expended_nodes = {}
+        self.expanded_nodes = {}
         self.total_cost = 0

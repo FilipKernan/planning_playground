@@ -67,7 +67,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
 
         result.path = self.get_path(self.goal_node)
         result.timing_data["total"] = time.time() - start_time
-        result.expended_nodes = self.nodes
+        result.expanded_nodes = self.nodes
         result.total_cost = self.goal_node.get_cost()
         return result
 

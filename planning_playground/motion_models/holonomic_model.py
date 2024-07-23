@@ -27,6 +27,9 @@ class HolonomicModel(AbstractMotionModel):
     def get_points(self, state):
         return state[0], state[1]
 
+    def discretize(self, state):
+        return self.get_discretized_state(state)
+
     def get_neighbor_states(self, state, timing_data):
         neighbors = []
         if self.is_discrete:
