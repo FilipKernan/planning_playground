@@ -16,32 +16,42 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
         map,
         max_velocity_linear,  # for now this is defined as pixels per second - todo is to make it meters per second
         max_angular_velocity,
-        time_step=0.5,
+        time_step=1.5,
         integration_steps=10,
+        is_discrete=False,
     ):
         self.time_step = time_step
         self.max_velocity_linear = max_velocity_linear
         self.max_angular_velocity = max_angular_velocity
         self.integration_steps = integration_steps
+        self.is_discrete = is_discrete
         super().__init__(map)
 
     def get_state_space(self):
         return ("x", "y", "theta")
 
+    def get_points(self, state):
+        return (state[0], state[1])
+
     def integrate_forward(self, state, action):
-        np_state = np.array(state)
-        np_action = np.array(action[0], 0, action[1])
+        np_state = np.array(state).astype(np.float64)
+        np_action = np.array((action[0], 0, action[1]))
         for i in range(self.integration_steps):
-            angle_transform = np.array(
-                [
-                    [np.cos(np_state[2]), -np.sin(np_state[2]), 0],
-                    [np.sin(np_state[2]), np.cos(np_state[2]), 0],
-                    [0, 0, 1],
-                ]
-            )
-            np_state += (angle_transform @ np_action) * self.time_step
-        new_state_tuple = (np_state[0], np_state[1], np_state[2])
+            added_state = [
+                np.sin(action[1]) * action[0] * self.time_step / self.integration_steps,
+                np.cos(action[1]) * action[0] * self.time_step / self.integration_steps,
+                action[1] * self.time_step / self.integration_steps,
+            ]
+            np_state += added_state
+        new_state_tuple = (np_state[0], np_state[1], np_state[2] % (2 * np.pi))
         return new_state_tuple
+
+    def discretize(self, state):
+        return (
+            int(self.map.scale(state[0])),
+            int(self.map.scale(state[1])),
+            int(state[2] / (2 * np.pi)),
+        )
 
     def get_neighbor_states(self, state, timing_data):
         neighbors = []
@@ -97,11 +107,11 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
     ):
         states = [start_state]
         state = start_state
-        action = (0, 0)
+        action = [0, 0]
 
-        if start_state[:2].dot(end_state[:2]) < 0:
+        if np.dot(start_state[:2], end_state[:2]) < 0:
             action[0] = -self.max_velocity_linear
-        elif start_state[:2].dot(end_state[:2]) > 0:
+        elif np.dot(start_state[:2], end_state[:2]) > 0:
             action[0] = self.max_velocity_linear
         else:
             action[0] = 0
@@ -119,6 +129,16 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
 
         return states
 
+    def calc_heuristic(self, current_state, goal, timing_data):
+        h = np.linalg.norm(
+            np.array((current_state[0], current_state[1]))
+            - np.array((goal[0], goal[1]))
+        )
+        angle = current_state[2] - goal[2]
+        angle = (angle + 180) % 360 - 180
+        # h += abs(angle / 180) * 2.0
+        return h
+
     def collision_check(self, state, timing_data):
         start_collision_check = time.time()
         height, width = self.map.get_map_dimensions()
@@ -131,7 +151,7 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
 
         for point in self.get_footprint(state):
             # print("checking if in collision: ", point)
-            if self.map.get_map_point_in_collision(point, self.map.discretized_map):
+            if self.map.get_map_point_in_collision(point, self.is_discrete):
                 end_collision_check = time.time()
                 timing_data["collision_check"] += (
                     end_collision_check - start_collision_check

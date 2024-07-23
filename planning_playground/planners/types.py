@@ -15,6 +15,9 @@ class Node:
     def get_state(self):
         return self.state
 
+    def get_discrete_state(self):
+        return self.motion_model.discretize(self.state)
+
     def calculate_cost(self, timing_data):
         if self.parent is not None:
             self.cost = self.parent.get_cost() + self.cost_eq(

@@ -52,13 +52,13 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
         open_set = set([open_node.state for open_node in open_list])
         heapq.heapify(open_list)
         print(open_list)
-        while len(open_list) > 0:
+        while len(open_list) > 0 and start_time + 150.0 > time.time():
             # get the current node
             start_expanding = time.time()
             current_node = heapq.heappop(open_list)
-            closed_dict[current_node.get_state()] = current_node
+            closed_dict[current_node.get_discrete_state()] = current_node
             # get the node with the lowest cost
-            # print("current node", current_node.get_state())
+            print("current node", current_node.get_state())
             # remove the current node from the open list
             try:
                 open_set.remove(current_node.get_state())
@@ -67,7 +67,6 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             neighbors = self.get_neighboring_nodes(
                 current_node, goal, result.timing_data
             )
-
             for neighbor in neighbors:
                 start_collision_check = time.time()
                 if neighbor.get_state() in open_set:
@@ -89,8 +88,8 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 # we should check the cost of the neighbor vs the one in the closed list
                 # if the cost of the neighbor is lower than the one in the closed list
                 # we should remove the one in the closed list and add the neighbor to the open list
-                if neighbor.state in closed_dict:
-                    closed_node = closed_dict[neighbor.state]
+                if neighbor.get_discrete_state() in closed_dict:
+                    closed_node = closed_dict[neighbor.get_discrete_state()]
                     if (
                         neighbor.get_total_cost() < closed_node.get_total_cost()
                         and closed_node != start
@@ -100,8 +99,9 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                         closed_node.parent.remove_child(closed_node)
                         for child in closed_node.get_children():
                             child.parent = neighbor
-                        closed_dict[neighbor.state] = neighbor
+                        closed_dict[neighbor.get_discrete_state()] = neighbor
                 else:
+                    print("neighbor not in closed list")
                     heapq.heappush(open_list, neighbor)
                     current_node.add_child(neighbor)
                     open_set.add(neighbor.state)
@@ -111,7 +111,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                     end_checking_closed - start_checking_closed
                 )
 
-            closed_dict[current_node.get_state()] = current_node
+            closed_dict[current_node.get_discrete_state()] = current_node
             end_expanding = time.time()
             result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
@@ -119,6 +119,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             if self.within_termination_bounds(
                 current_node.get_state(), goal.get_state()
             ):
+                print("goal reached")
                 start_path = time.time()
                 result.path = self.get_path(current_node)
                 end_time = time.time()
@@ -129,24 +130,31 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
 
                 return result
 
+        start_path = time.time()
+        # result.path = self.get_path(current_node)
+        end_time = time.time()
+        result.timing_data["path_creation"] = end_time - start_path
+        result.timing_data["total"] = end_time - start_time
+        result.expended_nodes = closed_dict
+        result.total_cost = current_node.get_total_cost()
         return result
 
     def within_termination_bounds(self, state, goal) -> bool:
         return (
             np.linalg.norm(np.array(state[:2]) - np.array(goal[:2]))
-            < self.motion_model.position_discretization
-            and abs(state[2] - goal[2]) < self.motion_model.orientation_discretization
+            < self.map.grid_size
+            and abs(state[2] - goal[2]) < 2.1
         )
 
     def rewire(self, node, neighbor, closed_dict, open_list):
         if neighbor.get_state() in closed_dict:
-            closed_node = closed_dict[neighbor.get_state()]
+            closed_node = closed_dict[neighbor.get_discrete_state()]
             if neighbor.get_total_cost() < closed_node.get_total_cost():
                 closed_dict.pop(neighbor.get_state())
                 closed_node.parent.remove_child(closed_node)
                 for child in closed_node.get_children():
                     child.parent = neighbor
-                closed_dict[neighbor.get_state()] = neighbor
+                closed_dict[neighbor.get_discrete_state()] = neighbor
                 heapq.heappush(open_list, neighbor)
                 node.add_child(neighbor)
                 return True

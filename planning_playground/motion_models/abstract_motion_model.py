@@ -18,6 +18,14 @@ class AbstractMotionModel(ABC):
         raise NotImplementedError("This method should be overridden by a subclass")
 
     @abstractmethod
+    def get_points(self) -> tuple:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
+    def discretize(self, state: tuple) -> tuple:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
     def get_neighbor_states(self, state: tuple, timing_data: dict) -> list[tuple]:
         raise NotImplementedError("This method should be overridden by a subclass")
 
