@@ -8,6 +8,14 @@ from planning_playground.planners.types import Node, PathPlanningResult
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.planners.types import Node
 
+"""
+https://www.gorillasun.de/blog/particle-system-optimization-grid-lookup-spatial-hashing/ for an optimization
+
+Actually, use https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.cKDTree.html for both nearest neighbor and radius search
+
+
+"""
+
 
 class RRTPlanner(abstract_planner.AbstractPlanner):
     def __init__(self, map: AbstractMap, motion_model: HolonomicModel):
