@@ -43,7 +43,11 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
                 action[1] * self.time_step / self.integration_steps,
             ]
             np_state += added_state
-        new_state_tuple = (np_state[0], np_state[1], np_state[2] % (2 * np.pi))
+        new_state_tuple = (
+            int(np_state[0]),
+            int(np_state[1]),
+            np_state[2] % (2 * np.pi),
+        )
         return new_state_tuple
 
     def discretize(self, state):

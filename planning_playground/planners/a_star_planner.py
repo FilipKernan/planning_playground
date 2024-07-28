@@ -52,11 +52,11 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
         open_set = set([open_node.state for open_node in open_list])
         heapq.heapify(open_list)
         print(open_list)
-        while len(open_list) > 0 and start_time + 150.0 > time.time():
+        while len(open_list) > 0 and start_time + 30.0 > time.time():
             # get the current node
             start_expanding = time.time()
             current_node = heapq.heappop(open_list)
-            closed_dict[current_node.get_discrete_state()] = current_node
+            closed_dict[current_node.get_state()] = current_node
             # get the node with the lowest cost
             print("current node", current_node.get_state())
             # remove the current node from the open list
@@ -88,8 +88,8 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 # we should check the cost of the neighbor vs the one in the closed list
                 # if the cost of the neighbor is lower than the one in the closed list
                 # we should remove the one in the closed list and add the neighbor to the open list
-                if neighbor.get_discrete_state() in closed_dict:
-                    closed_node = closed_dict[neighbor.get_discrete_state()]
+                if neighbor.get_state() in closed_dict:
+                    closed_node = closed_dict[neighbor.get_state()]
                     if (
                         neighbor.get_total_cost() < closed_node.get_total_cost()
                         and closed_node != start
@@ -99,7 +99,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                         closed_node.parent.remove_child(closed_node)
                         for child in closed_node.get_children():
                             child.parent = neighbor
-                        closed_dict[neighbor.get_discrete_state()] = neighbor
+                        closed_dict[neighbor.get_state()] = neighbor
                 else:
                     print("neighbor not in closed list")
                     heapq.heappush(open_list, neighbor)
@@ -111,7 +111,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                     end_checking_closed - start_checking_closed
                 )
 
-            closed_dict[current_node.get_discrete_state()] = current_node
+            closed_dict[current_node.get_state()] = current_node
             end_expanding = time.time()
             result.timing_data["expanding"] += end_expanding - start_expanding
             # if the current node is the goal node
@@ -148,13 +148,13 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
 
     def rewire(self, node, neighbor, closed_dict, open_list):
         if neighbor.get_state() in closed_dict:
-            closed_node = closed_dict[neighbor.get_discrete_state()]
+            closed_node = closed_dict[neighbor.get_state()]
             if neighbor.get_total_cost() < closed_node.get_total_cost():
                 closed_dict.pop(neighbor.get_state())
                 closed_node.parent.remove_child(closed_node)
                 for child in closed_node.get_children():
                     child.parent = neighbor
-                closed_dict[neighbor.get_discrete_state()] = neighbor
+                closed_dict[neighbor.get_state()] = neighbor
                 heapq.heappush(open_list, neighbor)
                 node.add_child(neighbor)
                 return True
