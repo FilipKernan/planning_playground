@@ -1,15 +1,23 @@
-import sys
 import numpy as np
+
+import planning_playground.motion_models.abstract_motion_model as abstract_motion_model
 
 
 class Node:
+    motion_model: abstract_motion_model.AbstractMotionModel
+    state: tuple
+    cost: float
+    heuristic: float
+
     def __init__(self, motion_model, state, parent=None):
         self.state = state
         self.motion_model = motion_model
         self.parent = parent
-        self.cost = None
-        self.heuristic = None
+        self.cost = np.nan
+        self.heuristic = np.nan
         self.children = []
+        if parent is not None:
+            parent.add_child(self)
 
     # todo - add a get neighbors function that uses the motion model to get the neighbors states
     def get_state(self):
@@ -20,20 +28,22 @@ class Node:
             self.cost = self.parent.get_cost() + self.cost_eq(
                 self.parent, self, timing_data
             )
+            print("cost", self.cost)
             return self.cost
         return 0
 
     def calculate_heuristic(self, goal, timing_data):
         self.heuristic = self.heuristic_eq(goal, timing_data)
+        print("heuristic", self.heuristic)
 
     def get_heuristic(self):
-        if self.heuristic is None:
+        if self.heuristic is None or np.isnan(self.heuristic):
             timing_data = {"calc_heuristic": 0}
             return 0
         return self.heuristic
 
     def get_cost(self):
-        if self.cost is None:
+        if self.cost is None or np.isnan(self.cost):
             timing_data = {"calc_cost": 0}  # this is a dummy timing data
             return self.calculate_cost(timing_data)
         return self.cost
@@ -93,6 +103,11 @@ class Node:
 
 
 class PathPlanningResult:
+    path: list[tuple]
+    timing_data: dict[str, float]
+    expanded_nodes: dict[tuple, Node]
+    total_cost: float
+
     def __init__(self):
         self.path = []
         self.timing_data = {

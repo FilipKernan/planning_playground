@@ -3,9 +3,10 @@ import time
 import numpy as np
 from shapely.geometry import LineString, Polygon
 from planning_playground.map.abstract_map import AbstractMap
+from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
 
 
-class HolonomicModel:
+class HolonomicModel(AbstractMotionModel):
     def __init__(
         self,
         max_linear_velocity: tuple[float, float],
@@ -19,6 +20,9 @@ class HolonomicModel:
         self.orientation_discretization = 45
         self.is_discrete = is_discrete
         self.map = map
+
+    def get_state_space(self):
+        return ("x", "y", "theta")
 
     def get_points(self, state):
         return state[0], state[1]
@@ -52,7 +56,6 @@ class HolonomicModel:
         cost = 0
         if self.is_discrete:
             is_angle_diff = abs(current_state[2] - next_state[2]) > 0
-
             if is_angle_diff:
                 cost += 0.1
 
@@ -64,7 +67,6 @@ class HolonomicModel:
                 cost += 1.5 * dist
             else:
                 cost += dist
-
         else:
             dist = np.linalg.norm(
                 np.array((current_state[0], current_state[1]))
@@ -145,6 +147,42 @@ class HolonomicModel:
         return np.linalg.norm(
             np.array((a[0], a[1])) - np.array((b[0], b[1]))
         )  #  + abs(a[2] - b[2]) / 180.0
+
+    # returns true if the states are equal, false if they are not
+    # if the motion model is discrete, we need to discretize the states before comparing them
+    def are_states_equal(self, a, b):
+        if self.is_discrete:
+            a_disc = self.get_discretized_state(a)
+            a = (a_disc[0], a_disc[1], a[2])
+            print("a", a)
+            b_disc = self.get_discretized_state(b)
+            b = (b_disc[0], b_disc[1], b[2])
+            print("b", b)
+        angle = ((abs(a[2] - b[2]) + 180) % 360 - 180) / (
+            self.orientation_discretization // 2
+        )
+
+        print("angle", angle)
+        return (
+            abs(a[0] - b[0]) < 1e-3
+            and abs(a[1] - b[1]) < 1e-3
+            and angle <= 1
+            and angle >= -1
+        )
+
+    def get_discretized_state(self, state):
+        return (
+            state[0] // self.position_discretization,
+            state[1] // self.position_discretization,
+            ((state[2] + 180) % 360 - 180) // (self.orientation_discretization),
+        )
+
+    def get_state_discretization(self):
+        return (
+            self.position_discretization,
+            self.position_discretization,
+            self.orientation_discretization,
+        )
 
 
 def angle_between_vectors(a, b):

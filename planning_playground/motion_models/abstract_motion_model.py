@@ -40,6 +40,12 @@ class AbstractMotionModel(ABC):
         raise NotImplementedError("This method should be overridden by a subclass")
 
     @abstractmethod
+    def calc_heuristic(
+        self, current_state: tuple, goal_state: tuple, timing_data: dict
+    ) -> float:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
     def collision_check_between_states(
         self, start: tuple, end: tuple, timing_data: dict
     ) -> bool:
@@ -47,4 +53,16 @@ class AbstractMotionModel(ABC):
 
     @abstractmethod
     def get_distance(self, state1: tuple, state2: tuple) -> float:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
+    def are_states_equal(self, state1: tuple, state2: tuple) -> bool:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
+    def get_discretized_state(self, state: tuple) -> tuple:
+        raise NotImplementedError("This method should be overridden by a subclass")
+
+    @abstractmethod
+    def get_state_discretization(self) -> tuple:
         raise NotImplementedError("This method should be overridden by a subclass")
