@@ -172,8 +172,6 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             )
             if (
                 (x[0] < node.get_cost() or distance_to_parent > self.radius)
-                and x[1].parent is not None
-                and x[1].parent != node
                 and self.can_reach_start(x[1])
                 and node not in x[1].get_ancestry()
             ):
