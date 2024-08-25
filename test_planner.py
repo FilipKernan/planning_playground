@@ -72,10 +72,6 @@ def main(debug=False):
     print("number of nodes expanded", len(expanded))
     if not debug:
         return
-    sorted_expanded = sorted(expanded.values(), key=lambda x: x.get_heuristic())
-    with open("expanded_nodes.txt", "w") as f:
-        for node in sorted_expanded:
-            f.write(f"{node.get_state()} \n")
     viz.plot_expanded_nodes(expanded)
     plt.show()
     viz.plot_cost_and_heuristic(expanded)
