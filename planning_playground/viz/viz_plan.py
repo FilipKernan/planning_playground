@@ -182,7 +182,7 @@ class VizPlan:
             #         print("node children", node.children)
             # exit(1)
 
-            if node.state != (150, 300, 0):
+            if node.state != self.start:
                 parent_x_values = [node.state[0], node.parent.state[0]]
                 parent_y_values = [node.state[1], node.parent.state[1]]
                 parent_x = node.parent.state[0]

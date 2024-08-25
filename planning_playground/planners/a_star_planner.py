@@ -91,11 +91,8 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             # print("expanded_nodes", len(self.closed_dict.keys()))
             # print("current node", current_node.get_state())
             # print("goal node", self.goal_node.get_state())
-            if (
-                self.within_termination_bounds(
-                    current_node.get_state(), self.goal_node.get_state()
-                )
-                or time.time() - start_time > 30
+            if self.within_termination_bounds(
+                current_node.get_state(), self.goal_node.get_state()
             ):
                 print("goal reached")
                 start_path = time.time()
@@ -157,8 +154,8 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
                 )
                 continue
 
-            if self.motion_model.collision_check(
-                neighbor.get_state(), self.result.timing_data
+            if self.motion_model.collision_check_between_states(
+                current_node.get_state(), neighbor.get_state(), self.result.timing_data
             ):
                 self.result.timing_data["collision_check"] += (
                     time.time() - start_collision_check
@@ -190,7 +187,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
     def rewire(self, node: Node, neighbor: Node) -> bool:
         start_rewiring = time.time()
         discritized_state = neighbor.get_discrete_state()
-        print("discritized_state", discritized_state)
+        # print("discritized_state", discritized_state)
         # print("closed_dict", self.closed_dict.keys())
         if discritized_state in self.closed_dict:
             self.collisions += 1

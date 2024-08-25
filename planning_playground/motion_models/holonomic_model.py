@@ -104,7 +104,6 @@ class HolonomicModel(AbstractMotionModel):
             if self.collision_check(new_state, timing_data):
                 new_state = None
         timing_data["sampling"] += time.time() - start_time
-        print("sampled state: ", new_state)
         return new_state
 
     def collision_check_between_states(self, start, end, timing_data):
@@ -157,15 +156,12 @@ class HolonomicModel(AbstractMotionModel):
         if self.is_discrete:
             a_disc = self.get_discretized_state(a)
             a = (a_disc[0], a_disc[1], a[2])
-            print("a", a)
             b_disc = self.get_discretized_state(b)
             b = (b_disc[0], b_disc[1], b[2])
-            print("b", b)
         angle = ((abs(a[2] - b[2]) + 180) % 360 - 180) / (
             self.orientation_discretization // 2
         )
 
-        print("angle", angle)
         return (
             abs(a[0] - b[0]) < 1e-3
             and abs(a[1] - b[1]) < 1e-3

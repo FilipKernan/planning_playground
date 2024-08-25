@@ -62,26 +62,43 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
                 (0, self.time_step),
                 (default_state[0], default_state[1], default_state[2]),
                 args=[action],
+                dense_output=True,
             )
             cost = 0
-            for i in range(len(solution.t) - 1):
+            times = np.linspace(0, self.time_step, 3)
+            interpoalted_states = solution.sol(times)
+            interpoalted_states = list(
+                zip(
+                    interpoalted_states[0],
+                    interpoalted_states[1],
+                    interpoalted_states[2],
+                )
+            )
+            for i in range(len(interpoalted_states) - 1):
                 cost += np.linalg.norm(
                     np.array(
-                        (solution.y[0][i], solution.y[1][i], solution.y[2][i] * 10)
+                        (
+                            interpoalted_states[i][0],
+                            interpoalted_states[i][1],
+                            interpoalted_states[i][2] * 20,
+                        )
                     )
                     - np.array(
                         (
-                            solution.y[0][i + 1],
-                            solution.y[1][i + 1],
-                            solution.y[2][i + 1] * 10,
+                            interpoalted_states[i + 1][0],
+                            interpoalted_states[i + 1][1],
+                            interpoalted_states[i + 1][2] * 20,
                         )
                     )
                 )
-            self.integration_dict[tuple(action)] = (solution, cost)
+            if action[0] < 0:
+                cost *= 2.0
+            if action[1] != 0:
+                cost *= 1.5
+            self.integration_dict[tuple(action)] = (solution, cost, interpoalted_states)
         else:
             self.lookup_count += 1
-            # print("lookup count", self.lookup_count)
-        solution, _ = self.integration_dict[tuple(action)]
+        solution, _, interpoalted_states = self.integration_dict[tuple(action)]
         new_state_tuple = (
             (
                 solution.y[0][-1] * np.cos(state[2])
@@ -95,14 +112,13 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
             + state[1],
             wrap_angle_radians(solution.y[2][-1] + state[2]),
         )
-        return new_state_tuple, solution
+        return new_state_tuple, solution, interpoalted_states
 
     def discretize(self, state):
         return self.get_discretized_state(state)
 
     def get_neighbor_states(self, state, timing_data):
         neighbors = []
-        # print("getting neighbors")
         for action in self.actions:
             neighbors.append(self.integrate_forward(state, action, True)[0])
         return neighbors
@@ -129,12 +145,17 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
         return state
 
     def get_footprint(self, state):
-        return [(state[0], state[1])]
+        footprint = []
+        for i in range(0, self.wheel_base):
+            x = state[0] + i * np.cos(state[2])
+            y = state[1] + i * np.sin(state[2])
+            footprint.append((x, y))
+        return footprint
 
     def calc_cost(self, current_state, next_state, timing_data):
         start_time = time.time()
         cost = 0
-        _, cost = self.simulate_motion(current_state, next_state, timing_data, 10)
+        _, cost, _ = self.simulate_motion(current_state, next_state, timing_data, 10)
 
         end_time = time.time()
         timing_data["calc_cost"] += end_time - start_time
@@ -162,8 +183,13 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
         else:
             action[1] = 0
 
-        solution, cost = self.integration_dict[tuple(action)]
-        return solution, cost
+        if tuple(action) in self.integration_dict.keys():
+            solution, cost, interp_states = self.integration_dict[tuple(action)]
+        else:
+            solution, cost, interp_states = self.integrate_forward(
+                start_state, action, False
+            )
+        return solution, cost, interp_states
 
     def calc_heuristic(self, current_state, goal, timing_data):
         # todo create better heuristic
@@ -185,44 +211,32 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
             timing_data["collision_check"] += (
                 end_collision_check - start_collision_check
             )
+            print("out of bounds")
             return True
 
         for point in self.get_footprint(state):
-            # print("checking if in collision: ", point)
             if self.map.get_map_point_in_collision(point, self.is_discrete):
                 end_collision_check = time.time()
+
                 timing_data["collision_check"] += (
                     end_collision_check - start_collision_check
                 )
-                # print("in collision")
                 return True
 
         end_collision_check = time.time()
         timing_data["collision_check"] += end_collision_check - start_collision_check
-        # print("not in collision")
         return False
 
     def collision_check_between_states(self, start, end, timing_data):
-        states = self.simulate_motion(
-            start, end, timing_data, int(abs(self.get_distance(start, end)))
-        )[0].y
-        collision_checking_states = [states[0]]
-        necessary_distance_m = 0.01 * METERS_TO_PIXELS
-        # if the map is discrete, the necessary distance is the grid size
-        if self.map.is_discrete:
-            necessary_distance_m = self.map.grid_size
-        for state in states:
-            if (
-                np.abs(np.linalg.norm(state[:2], collision_checking_states[-1][:2]))
-                > necessary_distance_m
-            ):
-                # if the distance between the current state and the last state checked is greater than the necessary distance
-                collision_checking_states.append(state)
+        collision_checking_states = []
+        collision_checking_states.append(start)
+        collision_checking_states.append(end)
         for i in range(len(collision_checking_states) - 1):
             state = collision_checking_states[i]
             if self.collision_check(state, timing_data):
                 return True
             start_collision_check = time.time()
+            print("number of countours", len(self.map.get_convex_obstacles()))
             contours = self.map.get_convex_obstacles()
             for contour in contours:
                 next_state = collision_checking_states[i + 1]
@@ -233,28 +247,24 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
                         time.time() - start_collision_check
                     )
                     return True
+        print("no collision until the end")
+        return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):
+        # This should use the reed-shepp curve
         return np.linalg.norm(
-            np.array((state1[0], state1[1])) - np.array((state2[0], state2[1]))
+            np.array((state1[0], state1[1], state1[2]))
+            - np.array((state2[0], state2[1], state2[2]))
         )
 
     def are_states_equal(self, a, b):
-        print(f"a state {a}, b state {b}")
         if self.is_discrete:
             discretization = self.get_state_discretization()
 
-            # print("I am discrete")
-            # print("discretization", discretization)
             a_disc = self.get_discretized_state(a)
             a = a_disc
-            # print("a", a)
             b_disc = self.get_discretized_state(b)
             b = b_disc
-            # print("b", b)
-        print(
-            f"differences { abs(a[0] - b[0])  }, { abs(a[1] - b[1])  } , { abs(a[2] - b[2]) }"
-        )
         return (
             abs(a[0] - b[0]) <= 0.5
             and abs(a[1] - b[1]) <= 0.5
@@ -278,7 +288,7 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
         return (
             self.map.map_dimensions[0] // self.map.grid_size,
             self.map.map_dimensions[1] // self.map.grid_size,
-            0.25,
+            0.75,
         )
 
 

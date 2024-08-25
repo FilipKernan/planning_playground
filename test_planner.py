@@ -20,16 +20,19 @@ from planning_playground.planners.types import PathPlanningResult
 # should take in a map, and a motion model type, and the state space
 
 global start
-start = (150, 300, -0.5)
+start = (150, 75, 0.0)
 global goal
-goal = (900, 900, 0.0)
+goal = (150, 640, 0.0)
 
 
 def main(debug=False):
     # Create a map
     print("creating map")
     # map = import_map.Map2d("planning_playground/map/map_dense750.png", grid_size=60)
-    map = import_map.Map2d("planning_playground/map/map_empty.png", grid_size=100)
+    map = import_map.Map2d(
+        "planning_playground/map/map_dense172.png",
+        grid_size=50,
+    )
     print("created map")
     # todo: make a ui for chousing the start and goal
     # cv2.imshow("map", map.map)
@@ -37,12 +40,12 @@ def main(debug=False):
     # cv2.waitKey(0)
     print("start", start)
     print("goal", goal)
-    # motion_model = holonomic_model.HolonomicModel([1, 1], 1, map, is_discrete=False)
+    # motion_model = holonomic_model.HolonomicModel([10, 10], 1, map, is_discrete=True)
     motion_model = kinematic_bicycle.KinematicBicycle(
-        map, 20, 0.01, 2, time_step=1, is_discrete=True
+        map, 20, 0.02, 2, time_step=1, is_discrete=True
     )
     result = PathPlanningResult()
-    planner = AStarPlanner(map, motion_model)
+    planner = RRTStarPlanner(map, motion_model)
     result = planner.plan(start, goal)
     path = []
 

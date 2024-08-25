@@ -29,7 +29,6 @@ class Node:
             self.cost = self.parent.get_cost() + self.cost_eq(
                 self.parent, self, timing_data
             )
-            print("cost", self.cost)
             return self.cost
         return 0
 

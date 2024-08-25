@@ -3,14 +3,14 @@ import time
 import numpy as np
 
 import planning_playground.planners.abstract_planner as abstract_planner
-from planning_playground.motion_models.holonomic_model import HolonomicModel
+from planning_playground.motion_models.holonomic_model import AbstractMotionModel
 from planning_playground.planners.types import Node, PathPlanningResult
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.planners.types import Node
 
 
 class RRTPlanner(abstract_planner.AbstractPlanner):
-    def __init__(self, map: AbstractMap, motion_model: HolonomicModel):
+    def __init__(self, map: AbstractMap, motion_model: AbstractMotionModel):
         self.map = map
         self.motion_model = motion_model
         self.nodes = {}

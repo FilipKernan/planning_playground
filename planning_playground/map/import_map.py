@@ -12,12 +12,11 @@ class Map2d(abstract_map.AbstractMap):
         self.map_dimensions = None
         self.map = None
         self.image_path = image_path
+        self.grid_size = grid_size
         self.map = self.import_map(image_path)
         self.map_dimensions, self.convex_obstacles = (
             self.get_map_dimensions_and_obstacles()
         )
-        self.grid_size = grid_size
-        self.create_map_graph()
 
     def import_map(self, image_path):
         # Load the image using OpenCV
@@ -51,36 +50,25 @@ class Map2d(abstract_map.AbstractMap):
         # Apply a threshold to the image
         _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
 
-        kernel = np.ones((10, 10), np.uint8)  # this should be a parameter
-        dialated = cv2.dilate(thresh, kernel, iterations=2)
+        kernel = np.ones((5, 5), np.uint8)  # this should be a parameter
+        dilated = cv2.dilate(thresh, kernel, iterations=5)
         # Find contours in the image
-        contours, _ = cv2.findContours(dialated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cv2.drawContours(self.map, contours, -1, (0, 255, 0), 4)
         # cv2.imshow("hello", self.map)
 
         hull_list = []
-        # for contour in contours:
-        #     # Convert the contour to a format suitable for the triangle library
-        #     contour_points = contour.squeeze().tolist()
-        #     segments = [
-        #         [i, (i + 1) % len(contour_points)] for i in range(len(contour_points))
-        #     ]
-
-        #     # Create the input dictionary for the triangle library
-        #     contour_dict = {"vertices": contour_points, "segments": segments}
-
-        #     # Triangulate the contour using the triangle library
-        #     t = triangle.triangulate(contour_dict, "pq0")
-
-        #     # Reconstruct the convex polygons from the triangulation
-        #     for triangle_indices in t["triangles"]:
-        #         pts = [t["vertices"][i] for i in triangle_indices]
-        #         hull_list.append(np.array(pts, dtype=np.int32))
         for contour in contours:
             hull_list.append(contour)
         cv2.drawContours(self.map, hull_list, -1, (0, 127, 255), 1)
         # cv2.imshow("Image", self.map)
         # cv2.waitKey(0)
+        self.collision_map = dilated
+        # Resize input to "pixelated" size
+        pixilated = cv2.resize(
+            dilated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR
+        )
+        self.pixilized = pixilated
         cv2.destroyAllWindows()
         return hull_list
 
@@ -95,44 +83,6 @@ class Map2d(abstract_map.AbstractMap):
         hulls = self.get_map_convex_obstacles()
 
         return map_dimensions, hulls
-
-    # create a graph from the map using a grid of nodes and a discretized version of the map
-    def create_map_graph(self):
-        # Load the image using OpenCV
-
-        # Check if the image was loaded successfully
-        # Convert the image to grayscale
-        ##  print("creating map graph")
-        gray = cv2.cvtColor(self.map, cv2.COLOR_BGR2GRAY)
-
-        # Apply a threshold to the image
-        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY_INV)
-        # print("thresh", thresh)
-        # cv2.imshow("thresh", thresh)
-
-        # Find contours in the image
-        contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        kernel = np.ones((10, 10), np.uint8)  # this should be a parameter
-        dilated = cv2.dilate(thresh, kernel, iterations=2)
-        # cv2.imshow("dilated", dilated)
-        self.collision_map = dilated
-        # Resize input to "pixelated" size
-        pixilated = cv2.resize(
-            dilated, (self.grid_size, self.grid_size), interpolation=cv2.INTER_LINEAR
-        )
-        self.pixilized = pixilated
-        # cv2.imshow("pixilated", pixilated)
-        # cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        print("creating nodes " + str(self.grid_size**2))
-        # Create a grid of nodes
-        nodes = {}
-        for i in range(self.grid_size):
-            for j in range(self.grid_size):
-                nodes[i, j] = (
-                    pixilated[i, j],
-                    (i * self.grid_size, j * self.grid_size),
-                )
 
     # get the value of the map a a specific point
     def get_map_collision_value(self, point):
