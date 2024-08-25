@@ -90,7 +90,12 @@ class Map2d(abstract_map.AbstractMap):
 
         # Check if the image was loaded successfully
         # Get the value of the map at a specific point
-        value = self.collision_map[point[1], point[0]]
+        point = (int(point[0]), int(point[1]))
+        if point[0] < 0 or point[1] < 0:
+            return 1
+        if point[0] >= self.map_dimensions[0] or point[1] >= self.map_dimensions[1]:
+            return 1
+        value = self.collision_map[int(point[1]), int(point[0])]
         return value
 
     # get the balue of the map at a specific point with the grid
@@ -99,6 +104,11 @@ class Map2d(abstract_map.AbstractMap):
 
         # Check if the image was loaded successfully
         # Get the value of the map at a specific point with the grid
+        point = (int(point[0]), int(point[1]))
+        if point[0] < 0 or point[1] < 0:
+            return 1
+        if point[0] >= self.pixilized.shape[0] or point[1] >= self.pixilized.shape[1]:
+            return 1
         value = self.pixilized[point[1], point[0]]
         # print("value", value)
         return value

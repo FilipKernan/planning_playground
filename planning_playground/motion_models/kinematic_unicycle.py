@@ -251,7 +251,6 @@ class KinematicUnicycle(abstract_motion_model.AbstractMotionModel):
         return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):
-        # This should use the reed-shepp curve
         return np.linalg.norm(
             np.array((state1[0], state1[1], state1[2]))
             - np.array((state2[0], state2[1], state2[2]))

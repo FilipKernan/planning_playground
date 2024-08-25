@@ -157,6 +157,7 @@ class VizPlan:
         fig.colorbar(sc, ax=ax, label="Cost")
         # Plot the connections
         plt.show()
+        self.get_plotted_map()
         states = [node.state for node in expanded.values()]
         for node in expanded.values():
             # for child in node.children:

@@ -8,6 +8,7 @@ import planning_playground.planners.rrt_planner as rrt_planner
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
 from planning_playground.planners.types import Node, PathPlanningResult
+from scipy.spatial import KDTree
 
 
 # todo: cleanup
@@ -18,7 +19,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         # idea: create anytime planner that modulates the max itterations and the radius
         # todo: radius and max itterations should be parameters
         self.radius = 100
-        self.max_iter = 300
+        self.max_iter = 1000
         self.path_limit = 1000  # limiting paths to 1000 nodes
         self.goal_threshold = self.radius * 2
 
@@ -28,9 +29,10 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         self.start_node.cost = 0
         self.goal_node = Node(self.motion_model, goal, None)
         self.nodes[start] = self.start_node
+        self.kd_tree = KDTree(list(self.nodes.keys()))
         start_time = time.time()
         sample_count = 0
-        while sample_count < self.max_iter:
+        while sample_count < self.max_iter or ( self.goal_node.parent is None  and len( self.nodes.keys() )):
             start_expanding = time.time()
             sample_count += 1
             self.sample(result)
@@ -79,6 +81,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                 result.timing_data["rewiring"] += time.time() - start_time
                 rand_node.calculate_cost(result.timing_data)
         self.nodes[rand_node.get_state()] = rand_node
+        self.kd_tree = KDTree(list(self.nodes.keys()))
         self.rewire_neighborhood(rand_node, neighborhood, result)
         # this needs to use the cost to get the nearest node to the goal state, fix this after fixing the neighborhood rewire
         if (
@@ -105,21 +108,34 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
 
     # returns the node within the neighbor radius with the lowest cost to the target node and the list of nodes within the radius
     def get_neighborhood(self, node: Node, timing_data):
-        nodes_within_radius = set()
-        for expanded_node in self.nodes.values():
-            distance = self.motion_model.get_distance(
-                expanded_node.get_state(), node.get_state()
-            )
-            if distance < self.radius:
-                nodes_within_radius.add(expanded_node)
-        nodes_within_radius = list(nodes_within_radius)
-        print(
-            f"Found {len(nodes_within_radius)} nodes within radius of {node.get_state()}"
+        start_time = time.time()
+        points_in_neighborhood = self.kd_tree.query_ball_point(
+            node.get_state(), self.radius, return_sorted=True
         )
-        print("neighborhood", [str(n) for n in nodes_within_radius])
-        nearest = super().get_nearest_node(node, timing_data)
-
-        return nearest, nodes_within_radius
+        print("points in neighborhood", points_in_neighborhood)
+        nodes_within_radius = [
+            self.nodes[tuple(self.kd_tree.data[i])] for i in points_in_neighborhood
+        ]
+        valid_nodes = []
+        nodes_within_radius.sort(
+            key=lambda x: self.motion_model.get_distance(
+                x.get_state(), node.get_state()
+            )
+        )
+        for n in nodes_within_radius:
+            if not self.motion_model.collision_check_between_states(
+                n.get_state(), node.get_state(), timing_data
+            ):
+                valid_nodes.append(n)
+        print(f"Found {len(valid_nodes)} nodes within radius of {node.get_state()}")
+        print("neighborhood", [str(n) for n in valid_nodes])
+        timing_data["getting_neighbors"] += time.time() - start_time
+        nearest: Node | None
+        if len(valid_nodes) == 0:
+            nearest = super().get_nearest_node(node, timing_data)
+        else:
+            nearest = valid_nodes[0]
+        return nearest, valid_nodes
 
     # todo break this up if you can, but you need to put a doc string here
     # also add timing data to this

@@ -3,6 +3,7 @@ import time
 from shapely.geometry import LineString, Polygon
 import numpy as np
 import scipy.integrate as spi
+from rsplan import planner, primitives
 
 METERS_TO_PIXELS = 100
 
@@ -54,6 +55,7 @@ class KinematicBicycle(abstract_motion_model.AbstractMotionModel):
                 (v / wheel_base) * np.tan(w),
             ]
 
+        cost = 0
         if tuple(action) not in self.integration_dict.keys():
             default_state = (0, 0, 0)
             solution = spi.solve_ivp(
@@ -63,7 +65,6 @@ class KinematicBicycle(abstract_motion_model.AbstractMotionModel):
                 args=[action, self.wheel_base],
                 dense_output=True,
             )
-            cost = 0
             times = np.linspace(0, self.time_step, 3)
             interpoalted_states = solution.sol(times)
             interpoalted_states = list(
@@ -193,6 +194,13 @@ class KinematicBicycle(abstract_motion_model.AbstractMotionModel):
     def calc_heuristic(self, current_state, goal, timing_data):
         # todo create better heuristic
         start_time = time.time()
+        # path = planner.path(
+        #     current_state,
+        #     goal,
+        #     self.wheel_base * np.tan(self.max_angular_velocity),
+        #     0.0,
+        #     5.0,
+        # )
         h = np.linalg.norm(
             np.array((current_state[0], current_state[1], current_state[2] * 10))
             - np.array((goal[0], goal[1], goal[2] * 10))
@@ -250,6 +258,14 @@ class KinematicBicycle(abstract_motion_model.AbstractMotionModel):
         return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):
+        path = planner.path(
+            state1,
+            state2,
+            self.wheel_base * np.tan(self.max_angular_velocity),
+            0.0,
+            0.5,
+        )
+        return path.total_length
         return np.linalg.norm(
             np.array((state1[0], state1[1])) - np.array((state2[0], state2[1]))
         )

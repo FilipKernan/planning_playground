@@ -7,6 +7,7 @@ from planning_playground.motion_models.holonomic_model import AbstractMotionMode
 from planning_playground.planners.types import Node, PathPlanningResult
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.planners.types import Node
+from scipy.spatial import KDTree
 
 
 class RRTPlanner(abstract_planner.AbstractPlanner):
@@ -19,15 +20,19 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         self.goal_node = None
         self.max_iter = 300
         self.goal_threshold = 500
+        self.kd_tree: KDTree
 
-    def plan(self, start, goal):
+    def plan(self, start: tuple[float], goal):
         result = PathPlanningResult()
         self.start_node = Node(self.motion_model, start, None)
         self.goal_node = Node(self.motion_model, goal, None)
         self.nodes[start] = self.start_node
+        self.kd_tree = KDTree([start])
         start_time = time.time()
         sample_count = 0
-        while sample_count < self.max_iter:
+        while sample_count < self.max_iter or (
+            self.goal_node.parent is None and len(self.nodes.keys())
+        ):
             start_expanding = time.time()
             sample_count += 1
             # create a sampler class base class that has a get_random_state method
@@ -41,6 +46,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             rand_node.cost = rand_node.get_cost()
             nearest_node.children.append(rand_node)
             self.nodes[rand_node.get_state()] = rand_node
+            self.kd_tree = KDTree(list(self.nodes.keys()))
 
             if (
                 self.motion_model.get_distance(
@@ -74,12 +80,8 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
     def get_nearest_node(self, node: Node, timing_data):
         start_time = time.time()
         nearest_node = None
-        nearest_dist = np.inf
-        for n in self.nodes.values():
-            dist = self.motion_model.get_distance(n.get_state(), node.get_state())
-            if dist < nearest_dist:
-                nearest_dist = dist
-                nearest_node = n
+        nearest_node_state = self.kd_tree.data[self.kd_tree.query(node.get_state())[1]]
+        nearest_node = self.nodes[tuple(nearest_node_state)]
         if self.motion_model.collision_check_between_states(
             nearest_node.get_state(), node.get_state(), timing_data
         ):

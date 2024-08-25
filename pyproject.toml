@@ -17,6 +17,7 @@ scipy = "^1.13.1"
 shapely = "^2.0.4"
 triangle = "^20230923"
 pytest = "^8.2.2"
+rsplan = "^1.0.10"
 
 
 [build-system]
