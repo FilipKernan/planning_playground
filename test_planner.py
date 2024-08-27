@@ -10,6 +10,8 @@ from planning_playground.planners.a_star_planner import AStarPlanner
 from planning_playground.planners.rrt_planner import RRTPlanner
 from planning_playground.planners.rrt_star_planner import RRTStarPlanner
 from planning_playground.planners.types import PathPlanningResult
+from planning_playground.smoothers.spline_smoother import SplineSmoother
+from planning_playground.smoothers.interp_smoother import InterpSmoother
 
 # create planner builder class
 # should take in a map, motion model, heruistic, and planner type
@@ -42,10 +44,10 @@ def main(debug=False):
     print("goal", goal)
     # motion_model = holonomic_model.HolonomicModel([10, 10], 1, map, is_discrete=True)
     motion_model = kinematic_bicycle.KinematicBicycle(
-        map, 20, 0.1, 4, time_step=1, is_discrete=True
+        map, 20, 0.1, 4, time_step=1, is_discrete=False
     )
     result = PathPlanningResult()
-    planner = AStarPlanner(map, motion_model)
+    planner = RRTStarPlanner(map, motion_model)
     result = planner.plan(start, goal)
     path = []
 
@@ -65,17 +67,48 @@ def main(debug=False):
     #     for n in node.get_ancestry():
     #         assert n in expanded.values(), f"node {n.get_state()} not in expanded nodes"
     viz = viz_plan.VizPlan(map, path, motion_model, start, goal)
-    viz.plot_path()
+    # viz.plot_path()
     print("delta time", delta_time)
     print("total time", delta_time["total"])
     # print("expanded", expanded)
     print("number of nodes expanded", len(expanded))
     if not debug:
         return
-    viz.plot_expanded_nodes(expanded)
-    plt.show()
-    viz.plot_cost_and_heuristic(expanded)
+    # viz.plot_expanded_nodes(expanded)
+    # plt.show()
+    # viz.plot_cost_and_heuristic(expanded)
+    smoother = SplineSmoother(motion_model)
+    smoothed_paths = [result.path]
+    smoothed_paths.extend(smoother.smooth_path(result.path))
+    inter_smoother = InterpSmoother(motion_model)
+    inter_path = inter_smoother.smooth_path(result.path)
+    smoothed_paths.extend(inter_path)
+    smoothed_paths.extend(smoother.smooth_path(inter_path[0]))
 
+    for i, path in enumerate(smoothed_paths):
+        control, controld_dt = motion_model.evaluate_path(path)
+        fig, axs = plt.subplots(2, 2, figsize=(6.5, 4))
+        fig.suptitle(f"Control and Control Derivative for {i}")
+        axs[0][0].set_title("Linear Velocity")
+        axs[0][0].plot(control[0])
+        axs[0][0].axhline(y=motion_model.max_velocity_linear, color="r", linestyle="--")
+        axs[0][0].axhline(
+            y=-motion_model.max_velocity_linear, color="r", linestyle="--"
+        )
+        axs[0][1].set_title("Linear Velocity Derivative")
+        axs[0][1].plot(controld_dt[1])
+
+        axs[1][0].set_title("Steering Angle")
+        axs[1][0].plot(control[1])
+        axs[1][0].axhline(
+            y=motion_model.max_angular_velocity, color="r", linestyle="--"
+        )
+        axs[1][0].axhline(
+            y=-motion_model.max_angular_velocity, color="r", linestyle="--"
+        )
+        axs[1][1].set_title("Steering Angle Rate")
+        axs[1][1].plot(controld_dt[1])
+    plt.show()
     return
 
 

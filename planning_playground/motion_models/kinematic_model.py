@@ -138,7 +138,7 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
     def calc_cost(self, current_state, next_state, timing_data):
         start_time = time.time()
         cost = 0
-        _, cost, _ = self.simulate_motion(current_state, next_state, timing_data, 10)
+        cost = self.simulate_motion(current_state, next_state, timing_data, 10)
 
         end_time = time.time()
         timing_data["calc_cost"] += end_time - start_time
@@ -166,13 +166,15 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
         else:
             action[1] = 0
 
-        if tuple(action) in self.integration_dict.keys():
-            solution, cost, interp_states = self.integration_dict[tuple(action)]
+        if self.is_discrete:
+            if tuple(action) in self.integration_dict.keys():
+                _, cost, _ = self.integration_dict[tuple(action)]
+            else:
+                _, cost, _ = self.integrate_forward(start_state, action, False)
+            return cost
         else:
-            solution, cost, interp_states = self.integrate_forward(
-                start_state, action, False
-            )
-        return solution, cost, interp_states
+            cost = self.get_distance(state, end_state)
+            return cost
 
     def calc_heuristic(self, current_state, goal, timing_data):
         # todo create better heuristic
@@ -234,16 +236,9 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
         return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):
-        path = planner.path(
-            state1,
-            state2,
-            self.wheel_base * np.tan(self.max_angular_velocity),
-            0.0,
-            0.5,
-        )
-        return path.total_length
         return np.linalg.norm(
-            np.array((state1[0], state1[1])) - np.array((state2[0], state2[1]))
+            np.array((state1[0], state1[1], state1[2]))
+            - np.array((state2[0], state2[1], state2[2]))
         )
 
     def are_states_equal(self, a, b):

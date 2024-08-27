@@ -65,3 +65,30 @@ class KinematicBicycle(kinematic_model.KinematicModel):
             dense_output=True,
         )
         return solution
+
+    def evaluate_path(self, path):
+        # calculate the derivative of the path
+        path = np.array(path)
+        print(path.shape)
+        x = path[:, 0]
+        y = path[:, 1]
+        theta = path[:, 2]
+        dx_dt = np.gradient(x)
+        dy_dt = np.gradient(y)
+        dtheta_dt = np.gradient(theta)
+
+        inputted_velocity = []
+        inputted_steering_angle = []
+        for i in range(len(path)):
+            theta_i = theta[i]
+            vel = dx_dt[i] / np.cos(theta_i)
+            inputted_velocity.append(vel)
+            inputted_steering_angle.append(
+                np.arctan((dtheta_dt[i] * self.wheel_base) / vel)
+            )
+        inputted_acceleration = np.gradient(inputted_velocity)
+        inputted_steering_angle_rate = np.gradient(inputted_steering_angle)
+        return [
+            (inputted_velocity, inputted_steering_angle),
+            (inputted_acceleration, inputted_steering_angle_rate),
+        ]
