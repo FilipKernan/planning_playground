@@ -1,10 +1,11 @@
 [tool.poetry]
 name = "planning-playground"
-version = "0.1.0"
+version = "0.2.3"
 description = "This is a planning playground for learning motion and task planning"
 authors = ["Filip Kernan <filip.kernan@gmail.com>"]
 readme = "README.md"
 packages = [{include = "planning_playground"}]
+build = 'planning_playground/build.py'
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -18,8 +19,10 @@ shapely = "^2.0.4"
 triangle = "^20230923"
 pytest = "^8.2.2"
 rsplan = "^1.0.10"
+cython = "^3.0.11"
+setuptools = "^74.0.0"
 
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core", "cython", "setuptools"]
 build-backend = "poetry.core.masonry.api"

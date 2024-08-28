@@ -111,9 +111,7 @@ class HolonomicModel(AbstractMotionModel):
         start_collision_check = time.time()
         contours = self.map.get_convex_obstacles()
         for contour in contours:
-            contour = np.squeeze(contour)
-            polygon = Polygon(contour)
-            if polygon.intersects(LineString([start, end])):
+            if contour.intersects(LineString([start, end])):
                 timing_data["collision_check"] += time.time() - start_collision_check
                 return True
         timing_data["collision_check"] += time.time() - start_collision_check

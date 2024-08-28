@@ -20,23 +20,14 @@ class VizPlan:
         # resize the image
         plt.imshow(image_copy)
 
-    def linear_interpolate(
-        self, point: float, old_range: tuple[float], new_range: tuple[float]
-    ):
-        _, old_max = old_range
-        _, new_max = new_range
-        old_value = point
-        new_value = max(0, new_max * (old_value / old_max))
-        return int(new_value)
-
     def plot_path(self):
         image_copy = self.map.map.copy()
         # make the image copy 3 channels
         for i in range(len(self.path) - 1):
             point = self.motion_model.get_points(self.path[i])
             next_point = self.motion_model.get_points(self.path[i + 1])
-            print("point", point)
-            print("next_point", next_point)
+            # print("point", point)
+            # print("next_point", next_point)
             cv2.line(image_copy, point, next_point, (0, 0, 255), 5)
 
         image_copy = cv2.circle(

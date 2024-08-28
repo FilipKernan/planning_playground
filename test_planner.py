@@ -44,10 +44,10 @@ def main(debug=False):
     print("goal", goal)
     # motion_model = holonomic_model.HolonomicModel([10, 10], 1, map, is_discrete=True)
     motion_model = kinematic_bicycle.KinematicBicycle(
-        map, 20, 0.1, 4, time_step=1, is_discrete=False
+        map, 20, 0.1, 4, time_step=1, is_discrete=True
     )
     result = PathPlanningResult()
-    planner = RRTStarPlanner(map, motion_model)
+    planner = AStarPlanner(map, motion_model)
     result = planner.plan(start, goal)
     path = []
 

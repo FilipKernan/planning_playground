@@ -1,13 +1,14 @@
 import numpy as np
 
+import cython
 import planning_playground.motion_models.abstract_motion_model as abstract_motion_model
 
 
 class Node:
     motion_model: abstract_motion_model.AbstractMotionModel
     state: tuple
-    cost: float
-    heuristic: float
+    cost : float
+    heuristic : float
 
     def __init__(self, motion_model, state, parent=None):
         self.state = state

@@ -5,6 +5,7 @@ import numpy as np
 import scipy.integrate as spi
 from rsplan import planner, primitives
 from abc import ABC, abstractmethod
+import cython
 
 METERS_TO_PIXELS = 100
 
@@ -138,7 +139,10 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
     def calc_cost(self, current_state, next_state, timing_data):
         start_time = time.time()
         cost = 0
-        cost = self.simulate_motion(current_state, next_state, timing_data, 10)
+        if self.is_discrete:
+            cost = self.simulate_motion(current_state, next_state, timing_data, 10)
+        else:
+            cost = self.get_distance(current_state, next_state)
 
         end_time = time.time()
         timing_data["calc_cost"] += end_time - start_time
@@ -182,7 +186,7 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
         h = np.linalg.norm(
             np.array((current_state[0], current_state[1], current_state[2] * 10))
             - np.array((goal[0], goal[1], goal[2] * 10))
-        )
+        )  # type: ignore
         angle = current_state[2] - goal[2]
         # h += abs(angle) * (100 / h)
         timing_data["calc_heuristic"] += time.time() - start_time
@@ -216,23 +220,20 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
         collision_checking_states = []
         collision_checking_states.append(start)
         collision_checking_states.append(end)
+        polygons = self.map.get_convex_obstacles()
         for i in range(len(collision_checking_states) - 1):
             state = collision_checking_states[i]
             if self.collision_check(state, timing_data):
                 return True
             start_collision_check = time.time()
-            print("number of countours", len(self.map.get_convex_obstacles()))
-            contours = self.map.get_convex_obstacles()
-            for contour in contours:
-                next_state = collision_checking_states[i + 1]
-                contour = np.squeeze(contour)
-                polygon = Polygon(contour)
-                if polygon.intersects(LineString([state, next_state])):
+            next_state = collision_checking_states[i + 1]
+            line = LineString([state, next_state])
+            for polygon in polygons:
+                if polygon.intersects(line):
                     timing_data["collision_check"] += (
                         time.time() - start_collision_check
                     )
                     return True
-        print("no collision until the end")
         return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):

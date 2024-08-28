@@ -32,15 +32,13 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         self.kd_tree = KDTree(list(self.nodes.keys()))
         start_time = time.time()
         sample_count = 0
-        while sample_count < self.max_iter or ( self.goal_node.parent is None  and len( self.nodes.keys() )):
+        while sample_count < self.max_iter or (
+            self.goal_node.parent is None and len(self.nodes.keys())
+        ):
             start_expanding = time.time()
             sample_count += 1
             self.sample(result)
             result.timing_data["expanding"] += time.time() - start_expanding
-            print("sample count", sample_count)
-
-            if sample_count % 100 == 0:
-                print("sample count", sample_count)
 
         result.path = self.get_path(self.goal_node)
         result.timing_data["total"] = time.time() - start_time
@@ -60,7 +58,6 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
     ):
         nearest, neighborhood = self.get_neighborhood(rand_node, result.timing_data)
         if nearest is None:
-            print("no neighborhood found")
             result.timing_data["expanding"] += time.time() - start_expanding
             return
 
@@ -102,9 +99,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                 self.goal_node.get_state(),
                 result.timing_data,
             )
-            print("new goal threshold", self.goal_threshold)
             self.goal_node.parent = rand_node
-            print("goal state parent", self.goal_node.parent.get_state())
 
     # returns the node within the neighbor radius with the lowest cost to the target node and the list of nodes within the radius
     def get_neighborhood(self, node: Node, timing_data):
@@ -112,7 +107,6 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         points_in_neighborhood = self.kd_tree.query_ball_point(
             node.get_state(), self.radius, return_sorted=True
         )
-        print("points in neighborhood", points_in_neighborhood)
         nodes_within_radius = [
             self.nodes[tuple(self.kd_tree.data[i])] for i in points_in_neighborhood
         ]
@@ -127,8 +121,6 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                 n.get_state(), node.get_state(), timing_data
             ):
                 valid_nodes.append(n)
-        print(f"Found {len(valid_nodes)} nodes within radius of {node.get_state()}")
-        print("neighborhood", [str(n) for n in valid_nodes])
         timing_data["getting_neighbors"] += time.time() - start_time
         nearest: Node | None
         if len(valid_nodes) == 0:
@@ -157,7 +149,8 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         try:
             inner_neighborhood.remove(node)
         except ValueError:
-            print("node not in neighborhood")
+            pass
+            # print("node not in neighborhood")
         neighbor_cost_with_new_node = [
             (
                 n.get_cost()
@@ -178,20 +171,17 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                 node.parent.get_state(),
                 timing_data,
             )
+        start_time = time.time()
         while len(neighbor_cost_with_new_node) > 0 and not rewired:
             x = heapq.heappop(neighbor_cost_with_new_node)
             cost_from_neighbor_to_x = self.motion_model.calc_cost(
                 node.get_state(), x[1].get_state(), timing_data
-            )
-            print(
-                f"trying to rewire {str(node)} with {str(x[1])} which has a cost of {x[0]} while the current cost is {node.get_cost()}"
             )
             if (
                 (x[0] < node.get_cost() or distance_to_parent > self.radius)
                 and self.can_reach_start(x[1])
                 and node not in x[1].get_ancestry()
             ):
-                print("trying to rewire")
                 if (
                     cost_from_neighbor_to_x <= self.radius
                     and not self.motion_model.collision_check_between_states(
@@ -204,15 +194,14 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
                         ]
                         self.nodes[node.get_state()].calculate_cost(timing_data)
                     except KeyError:
-                        print(
-                            "key error, this is fine as the node has just not been added to the list of expanded nodes yet"
-                        )
+                        pass
+                        # print(
+                        #     "key error, this is fine as the node has just not been added to the list of expanded nodes yet"
+                        # )
                     node.parent = self.nodes[x[1].get_state()]
                     node.calculate_cost(timing_data)
-                    print("successful rewire")
                     rewired = True
-                else:
-                    print("collision detected")
+        timing_data["collision_check_spec"] += time.time() - start_time
 
     def can_reach_start(self, node: Node):
         current_node = node

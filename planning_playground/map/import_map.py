@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import triangle
+from shapely.geometry import LineString, Polygon
 
 import planning_playground.map.abstract_map as abstract_map
 
@@ -81,8 +82,13 @@ class Map2d(abstract_map.AbstractMap):
         height, width, channels = self.map.shape
         map_dimensions = (height, width)
         hulls = self.get_map_convex_obstacles()
+        polygons = []
+        for contour in hulls:
+            contour = np.squeeze(contour)
+            polygon = Polygon(contour)
+            polygons.append(polygon)
 
-        return map_dimensions, hulls
+        return map_dimensions, polygons
 
     # get the value of the map a a specific point
     def get_map_collision_value(self, point):

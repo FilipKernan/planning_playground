@@ -62,14 +62,14 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
                 self.goal_threshold = self.motion_model.get_distance(
                     rand_node.get_state(), self.goal_node.get_state()
                 )
-                print("new goal threshold", self.goal_threshold)
+                # print("new goal threshold", self.goal_threshold)
                 self.goal_node.parent = rand_node
-                print("goal state parent", self.goal_node.parent.get_state())
+                # print("goal state parent", self.goal_node.parent.get_state())
 
             result.timing_data["expanding"] += time.time() - start_expanding
 
-            if sample_count % 100 == 0:
-                print("sample count", sample_count)
+            # if sample_count % 100 == 0:
+                # print("sample count", sample_count)
 
         result.path = self.get_path(self.goal_node)
         result.timing_data["total"] = time.time() - start_time
