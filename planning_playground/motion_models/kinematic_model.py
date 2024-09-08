@@ -237,10 +237,11 @@ class KinematicModel(abstract_motion_model.AbstractMotionModel):
         return self.collision_check(end, timing_data)
 
     def get_distance(self, state1, state2):
-        return np.linalg.norm(
-            np.array((state1[0], state1[1], state1[2]))
-            - np.array((state2[0], state2[1], state2[2]))
-        )
+        # path = planner.path(  # type: ignore
+        #     state1, state2, 2, 0, 0.5
+        # )
+        # return path.total_length
+        return np.linalg.norm(np.array(state1) - np.array((state2)))
 
     def are_states_equal(self, a, b):
         if self.is_discrete:

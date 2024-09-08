@@ -6,8 +6,8 @@ import numpy as np
 
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
-import planning_playground.planners.abstract_planner as abstract_planner
-from planning_playground.planners.types import Node, PathPlanningResult
+import planning_playground.search.abstract_planner as abstract_planner
+from planning_playground.search.types import Node, PathPlanningResult
 
 # todo create viz for testing path planning
 # todo create a function that takes a map and a path and displays the path on the map
@@ -71,8 +71,7 @@ class AStarPlanner(abstract_planner.AbstractPlanner):
             self.start, self.goal_node, self.result.timing_data
         )
         print(neighbors)
-        for neighbor in neighbors:
-            self.open_list.append(neighbor)
+        self.open_list.extend(neighbors)
         end_setup_time = time.time()
         self.result.timing_data["setup"] = end_setup_time - start_time
         # while the open list is not empty

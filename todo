@@ -7,10 +7,9 @@
     - Dubins car
     - Reeds-Shepp car
     - holonomic robot - 1
+    - holonomic robot 2d
     - Bicycle model - 1
     - Unicycle model - 1
-    - Differential Drive
-    - Ackermann Drive
     - Car with trailer
     - Quadrotor
     - Hexacopter
@@ -83,8 +82,8 @@
     - simulate noise
 
 
+create path evaluation for each model
+ - total path length
+ - change in curvature
+ - required change in control commands
 
-
-Start with a simple holonomic robot and A* search
-Also start in python and then move to C++ as things get more complicated so that you know how to do it in c++
-    It is just faster to prototype in python

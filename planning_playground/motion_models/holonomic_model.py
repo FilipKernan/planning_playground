@@ -17,6 +17,7 @@ class HolonomicModel(AbstractMotionModel):
         self.position_discretization = (
             map.map_dimensions[0] // map.grid_size
         )  # the distance between each point in the grid
+        # rework the orentation to be in radians
         self.orientation_discretization = 45
         self.is_discrete = is_discrete
         self.map = map
@@ -60,7 +61,7 @@ class HolonomicModel(AbstractMotionModel):
         if self.is_discrete:
             is_angle_diff = abs(current_state[2] - next_state[2]) > 0
             if is_angle_diff:
-                cost += 0.1
+                cost += 100
 
             dist = np.linalg.norm(
                 np.array((current_state[0], current_state[1]))

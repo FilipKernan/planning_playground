@@ -1,4 +1,5 @@
 import planning_playground.motion_models.kinematic_model as kinematic_model
+import matplotlib.pyplot as plt
 import time
 from shapely.geometry import LineString, Polygon
 import numpy as np
@@ -66,16 +67,17 @@ class KinematicBicycle(kinematic_model.KinematicModel):
         )
         return solution
 
-    def evaluate_path(self, path):
+    def evaluate_path(self, path, time):
         # calculate the derivative of the path
         path = np.array(path)
         print(path.shape)
+        time_lin_space = np.linspace(0, time, len(path))
         x = path[:, 0]
         y = path[:, 1]
         theta = path[:, 2]
-        dx_dt = np.gradient(x)
-        dy_dt = np.gradient(y)
-        dtheta_dt = np.gradient(theta)
+        dx_dt = np.gradient(x, time_lin_space)
+        dy_dt = np.gradient(y, time_lin_space)
+        dtheta_dt = np.gradient(theta, time_lin_space)
 
         inputted_velocity = []
         inputted_steering_angle = []
@@ -86,9 +88,16 @@ class KinematicBicycle(kinematic_model.KinematicModel):
             inputted_steering_angle.append(
                 np.arctan((dtheta_dt[i] * self.wheel_base) / vel)
             )
-        inputted_acceleration = np.gradient(inputted_velocity)
-        inputted_steering_angle_rate = np.gradient(inputted_steering_angle)
-        return [
+        inputted_acceleration = np.gradient(inputted_velocity, time_lin_space)
+        inputted_steering_angle_rate = np.gradient(
+            inputted_steering_angle, time_lin_space
+        )
+        inputted_jerk = np.gradient(inputted_acceleration, time_lin_space)
+        inputted_steering_angle_rate_rate = np.gradient(
+            inputted_steering_angle_rate, time_lin_space
+        )
+        return (
             (inputted_velocity, inputted_steering_angle),
             (inputted_acceleration, inputted_steering_angle_rate),
-        ]
+            (inputted_jerk, inputted_steering_angle_rate_rate),
+        )

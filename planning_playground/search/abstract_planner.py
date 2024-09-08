@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
-from planning_playground.planners.types import PathPlanningResult, Node
+from planning_playground.search.types import PathPlanningResult, Node
 
 
 class AbstractPlanner(ABC):

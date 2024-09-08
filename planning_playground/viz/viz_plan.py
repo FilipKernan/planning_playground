@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.quiver as quiver
-from planning_playground.planners.types import Node
+from planning_playground.search.types import Node
 
 import numpy as np
 

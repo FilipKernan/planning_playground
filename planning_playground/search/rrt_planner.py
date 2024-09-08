@@ -2,11 +2,11 @@ import time
 
 import numpy as np
 
-import planning_playground.planners.abstract_planner as abstract_planner
+import planning_playground.search.abstract_planner as abstract_planner
 from planning_playground.motion_models.holonomic_model import AbstractMotionModel
-from planning_playground.planners.types import Node, PathPlanningResult
+from planning_playground.search.types import Node, PathPlanningResult
 from planning_playground.map.abstract_map import AbstractMap
-from planning_playground.planners.types import Node
+from planning_playground.search.types import Node
 from scipy.spatial import KDTree
 
 
@@ -18,7 +18,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
         self.start_node = None
         self.goal = None
         self.goal_node = None
-        self.max_iter = 300
+        self.max_iter = 1000
         self.goal_threshold = 500
         self.kd_tree: KDTree
 
@@ -69,7 +69,7 @@ class RRTPlanner(abstract_planner.AbstractPlanner):
             result.timing_data["expanding"] += time.time() - start_expanding
 
             # if sample_count % 100 == 0:
-                # print("sample count", sample_count)
+            # print("sample count", sample_count)
 
         result.path = self.get_path(self.goal_node)
         result.timing_data["total"] = time.time() - start_time

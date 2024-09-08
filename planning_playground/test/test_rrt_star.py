@@ -5,11 +5,11 @@ import numpy as np
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
 import planning_playground.viz.viz_plan as viz_plan
-from planning_playground.planners.rrt_star_planner import RRTStarPlanner
-from planning_playground.planners.rrt_planner import RRTPlanner
-from planning_playground.planners.a_star_planner import AStarPlanner
-from planning_playground.planners.types import PathPlanningResult
-from planning_playground.planners.types import Node
+from planning_playground.search.rrt_star_planner import RRTStarPlanner
+from planning_playground.search.rrt_planner import RRTPlanner
+from planning_playground.search.a_star_planner import AStarPlanner
+from planning_playground.search.types import PathPlanningResult
+from planning_playground.search.types import Node
 
 
 class RRTStarPlannerFixture:

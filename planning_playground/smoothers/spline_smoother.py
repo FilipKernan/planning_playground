@@ -1,7 +1,7 @@
 import scipy.interpolate as spi
 import numpy as np
 import matplotlib.pyplot as plt
-from planning_playground.planners.types import Node, PathPlanningResult
+from planning_playground.search.types import Node, PathPlanningResult
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
 
 
@@ -17,6 +17,7 @@ class SplineSmoother:
         for i in range(len(path[0])):
             values.append([state[i] for state in path])
         t = np.linspace(0, len(path), len(path))
+        # need to handle theta differently as it can roll over
         tck, u = spi.splprep(
             values,
             s=len(path) * 2,

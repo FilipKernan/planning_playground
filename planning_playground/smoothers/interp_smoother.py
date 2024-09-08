@@ -1,7 +1,7 @@
 import scipy.interpolate as spi
 import numpy as np
 import matplotlib.pyplot as plt
-from planning_playground.planners.types import Node, PathPlanningResult
+from planning_playground.search.types import Node, PathPlanningResult
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
 
 

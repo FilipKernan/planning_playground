@@ -4,10 +4,10 @@ import heapq
 
 import numpy as np
 
-import planning_playground.planners.rrt_planner as rrt_planner
+import planning_playground.search.rrt_planner as rrt_planner
 from planning_playground.map.abstract_map import AbstractMap
 from planning_playground.motion_models.abstract_motion_model import AbstractMotionModel
-from planning_playground.planners.types import Node, PathPlanningResult
+from planning_playground.search.types import Node, PathPlanningResult
 from scipy.spatial import KDTree
 
 
@@ -18,7 +18,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         # note: dense maps require more itterations
         # idea: create anytime planner that modulates the max itterations and the radius
         # todo: radius and max itterations should be parameters
-        self.radius = 100
+        self.radius = 75
         self.max_iter = 1000
         self.path_limit = 1000  # limiting paths to 1000 nodes
         self.goal_threshold = self.radius * 2
@@ -64,7 +64,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         rand_node.parent = nearest
         rand_node.calculate_cost(result.timing_data)
 
-        if len(neighborhood) > 0:
+        if neighborhood.size > 0:
             cost_to_random_node_for_each_neighbor = [
                 n.get_cost()
                 + self.motion_model.get_distance(n.get_state(), rand_node.get_state())
@@ -102,7 +102,9 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             self.goal_node.parent = rand_node
 
     # returns the node within the neighbor radius with the lowest cost to the target node and the list of nodes within the radius
-    def get_neighborhood(self, node: Node, timing_data):
+    def get_neighborhood(
+        self, node: Node, timing_data
+    ) -> tuple[Node | None, np.ndarray]:
         start_time = time.time()
         points_in_neighborhood = self.kd_tree.query_ball_point(
             node.get_state(), self.radius, return_sorted=True
@@ -110,7 +112,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
         nodes_within_radius = [
             self.nodes[tuple(self.kd_tree.data[i])] for i in points_in_neighborhood
         ]
-        valid_nodes = []
+        valid_nodes = np.array([], dtype=Node)
         nodes_within_radius.sort(
             key=lambda x: self.motion_model.get_distance(
                 x.get_state(), node.get_state()
@@ -120,7 +122,7 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
             if not self.motion_model.collision_check_between_states(
                 n.get_state(), node.get_state(), timing_data
             ):
-                valid_nodes.append(n)
+                valid_nodes = np.append(valid_nodes, [n])
         timing_data["getting_neighbors"] += time.time() - start_time
         nearest: Node | None
         if len(valid_nodes) == 0:
@@ -133,24 +135,18 @@ class RRTStarPlanner(rrt_planner.RRTPlanner):
     # also add timing data to this
     # I think this can use the rewire node
     def rewire_neighborhood(
-        self, node: Node, neighborhood: list[Node], result: PathPlanningResult
+        self, node: Node, neighborhood: np.ndarray, result: PathPlanningResult
     ):
         start_time = time.time()
-        neighborhood_with_new_node = neighborhood.copy()
-        neighborhood_with_new_node.append(node)
+        neighborhood_with_new_node = np.append(neighborhood, node)  # type: ignore
         for neighbor in neighborhood:
             self.rewire(neighbor, neighborhood_with_new_node, result.timing_data)
         result.timing_data["rewiring"] += time.time() - start_time
 
     # rewires the node that was just sampled. This has to be a special case because the node has just been added
     # above is a weak statement, check to see if it is actually true
-    def rewire(self, node: Node, neighborhood: list[Node], timing_data):
-        inner_neighborhood = neighborhood.copy()
-        try:
-            inner_neighborhood.remove(node)
-        except ValueError:
-            pass
-            # print("node not in neighborhood")
+    def rewire(self, node: Node, neighborhood: np.ndarray, timing_data):
+        inner_neighborhood = np.delete(neighborhood, np.where(neighborhood == node))
         neighbor_cost_with_new_node = [
             (
                 n.get_cost()

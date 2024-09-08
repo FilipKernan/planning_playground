@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 import planning_playground.map.import_map as import_map
-from planning_playground.planners.types import Node
+from planning_playground.search.types import Node
 
 """
 test to make sure that the map is imported correctly

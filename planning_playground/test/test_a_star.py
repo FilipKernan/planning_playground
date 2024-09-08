@@ -4,9 +4,9 @@ import numpy as np
 
 import planning_playground.map.import_map as import_map
 import planning_playground.motion_models.holonomic_model as holonomic_model
-from planning_playground.planners.a_star_planner import AStarPlanner
-from planning_playground.planners.types import PathPlanningResult
-from planning_playground.planners.types import Node
+from planning_playground.search.a_star_planner import AStarPlanner
+from planning_playground.search.types import PathPlanningResult
+from planning_playground.search.types import Node
 
 """
 expand lowest cost node
