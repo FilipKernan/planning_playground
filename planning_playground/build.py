@@ -21,7 +21,7 @@ else:
                 "planning_playground",
                 [
                     "planning_playground/map/abstract_map.py",
-                    "planning_playground/map/import_map.py",
+                    "planning_playground/map/map_2d.py",
                     "planning_playground/motion_models/abstract_motion_model.py",
                     "planning_playground/motion_models/holonomic_model.py",
                     "planning_playground/motion_models/kinematic_model.py",

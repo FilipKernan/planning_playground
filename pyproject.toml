@@ -21,6 +21,9 @@ pytest = "^8.2.2"
 rsplan = "^1.0.10"
 cython = "^3.0.11"
 setuptools = "^74.0.0"
+stl = "^0.0.3"
+numpy-stl = "^3.1.2"
+meshlib = "^2.4.4.153"
 
 
 [build-system]

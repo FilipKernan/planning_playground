@@ -15,11 +15,11 @@ class AbstractMap(ABC):
         self.resolution = resolution
         self.origin = origin
         self.grid_size = grid_size
-        self.map = self.import_map(map_path)
+        self.map = self.map_2d(map_path)
         pass
 
     @abstractmethod
-    def import_map(self, map_path: str) -> np.ndarray:
+    def map_2d(self, map_path: str) -> np.ndarray:
         raise NotImplementedError("This method should be overridden by a subclass.")
 
     def get_map(self) -> np.ndarray:

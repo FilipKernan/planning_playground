@@ -2,7 +2,7 @@ import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 
-import planning_playground.map.import_map as import_map
+import planning_playground.map.map_2d as map_2d
 import planning_playground.motion_models.holonomic_model as holonomic_model
 import planning_playground.motion_models.kinematic_unicycle as kinematic_unicycle
 import planning_playground.motion_models.kinematic_bicycle as kinematic_bicycle
@@ -32,8 +32,8 @@ goal = (150, 640, 0.0)
 def main(debug=False):
     # Create a map
     print("creating map")
-    # map = import_map.Map2d("planning_playground/map/map_dense750.png", grid_size=60)
-    map = import_map.Map2d(
+    # map = map_2d.Map2d("planning_playground/map/map_dense750.png", grid_size=60)
+    map = map_2d.Map2d(
         "planning_playground/map/map_dense172.png",
         grid_size=50,
     )

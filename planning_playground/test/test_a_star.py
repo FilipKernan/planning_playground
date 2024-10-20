@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-import planning_playground.map.import_map as import_map
+import planning_playground.map.map_2d as map_2d
 import planning_playground.motion_models.holonomic_model as holonomic_model
 from planning_playground.search.a_star_planner import AStarPlanner
 from planning_playground.search.types import PathPlanningResult
@@ -49,7 +49,7 @@ POSITION_DISCRETIZATION = MAP_SIZE // GRID_SIZE
 class AstarPlannerFixture:
     def __init__(self):
         # setup the planner and all required objects here
-        self.map = import_map.Map2d(
+        self.map = map_2d.Map2d(
             "planning_playground/map/map_empty.png", grid_size=GRID_SIZE
         )
         self.motion_model = holonomic_model.HolonomicModel(

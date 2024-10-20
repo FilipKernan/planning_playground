@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-import planning_playground.map.import_map as import_map
+import planning_playground.map.map_2d as map_2d
 from planning_playground.search.types import Node
 
 """
@@ -24,7 +24,7 @@ test to make sure collision checking works correctly
 class MapFixture:
     def __init__(self):
         # setup the planner and all required objects here
-        self.map = import_map.Map2d(
+        self.map = map_2d.Map2d(
             "planning_playground/map/map_empty.png", grid_size=10
         )
 

@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 
-import planning_playground.map.import_map as import_map
+import planning_playground.map.map_2d as map_2d
 import planning_playground.motion_models.holonomic_model as holonomic_model
 import planning_playground.viz.viz_plan as viz_plan
 from planning_playground.search.rrt_star_planner import RRTStarPlanner
@@ -15,7 +15,7 @@ from planning_playground.search.types import Node
 class RRTStarPlannerFixture:
     def __init__(self):
         # setup the planner and all required objects here
-        self.map = import_map.Map2d(
+        self.map = map_2d.Map2d(
             "planning_playground/map/map_empty.png", grid_size=60
         )
         self.motion_model = holonomic_model.HolonomicModel(
